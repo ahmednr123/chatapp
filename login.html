@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="ISO-8859-1">
+	<title>Login | ChatApp</title>
+	<link href="https://fonts.googleapis.com/css?family=Montserrat:400,600&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/style.css">
+	<script type="text/javascript" src="js/vanilla.js"></script>
+	<script type="text/javascript">
+		$xhrRequest('/ChatApp/session', (res) => {
+			if (res.trim() != "false")
+				window.location.replace("/ChatApp/chat_app.html");
+		})
+	</script>
+</head>
+<body>
+	<h2>Login [ChatApp]</h2>
+	<form action="/ChatApp/login" method="POST">
+		<section>
+			<label>Username</label>
+			<input type="text" name="username"/>
+		</section>
+		
+		<section>
+			<label>Password</label>
+			<input type="password" name="password"/>
+		</section>
+		
+		<section>
+			<input type="submit" value="LogIn"/>
+		</section>
+	</form>
+</body>
+</html>

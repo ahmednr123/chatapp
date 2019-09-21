@@ -1,0 +1,32 @@
+<project name="ChatApp" default="deploy" basedir=".">
+    <target name="init">
+        <property name="tomcat" value="C:\Program Files\Apache Software Foundation\Tomcat 9.0" />
+        <property name="tomcat.deployment" value="${tomcat}\webapps" />
+        <property name="tomcat.bin" value="${tomcat}\bin" />
+        <property name="sourceDir" value="src" />
+        <property name="outputDir" value="WEB-INF\classes" />
+    </target>
+
+    <target name="clean" depends="init">
+        <deltree dir="${outputDir}" />
+    </target>
+
+    <target name="prepare" depends="clean">
+        <mkdir dir="${outputDir}" />
+    </target>
+
+    <target name="compile" depends="prepare">
+        <javac includeantruntime="false" srcdir="${sourceDir}" destdir="${outputDir}">
+            <classpath>
+                <pathelement path="WEB-INF\lib\servlet-api.jar"/>
+                <pathelement path="WEB-INF\lib\mysql-connector-java-8.0.17.jar"/>
+                <pathelement path="WEB-INF\lib\tomcat-jdbc-8.5.32.jar" />
+            </classpath>
+        </javac>
+    </target>
+
+    <target name="deploy" depends="compile">
+        <exec executable="${tomcat.bin}\startup.bat"/>
+    </target>
+
+</project>

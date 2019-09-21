@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="ISO-8859-1">
+	<title>Dashboard | ChatApp</title>
+	<link href="https://fonts.googleapis.com/css?family=Montserrat:400,600&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="css/style.css">
+	<script type="text/javascript" src="js/vanilla.js"></script>
+	<script>
+		$xhrRequest('/ChatApp/session', (res) => {
+			if (res.trim() == "false") 
+				window.location.replace("/ChatApp/login.html");
+		})
+	</script>
+</head>
+<body>
+	<chat-app>
+	</chat-app>
+	<script type="text/javascript" src="js/chat_app.js"></script>
+</body>
+</html>

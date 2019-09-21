@@ -1,3 +1,7 @@
+const MessageType = {
+	NEW: 0, OLD: 1, CURRENT: 2
+}
+
 const DashboardView = {
 	data: {
 		chats: []
@@ -44,6 +48,7 @@ const DashboardView = {
 
 	updateChats: function (_xhr) {
 		$xhrRequest('/ChatApp/active_chats', (res) => {
+			console.log("chat: " + res);
 			res = JSON.parse(res);
 			DashboardView.data.chats = res;
 			DashboardView.render();
@@ -60,11 +65,12 @@ const DashboardView = {
 		else 
 		{
 			for (let json of this.data.chats)
-				$('#app-body').innerHTML += this.html.add_chat(json.id, json.username);
+				$('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username);
 
 			$forEach('chat-user', (el) => {
 				el.addEventListener('click', function () {
-					ChatView.show(el.innerHTML);
+					console.log(`chat_id: ${el.getAttribute("chat_id")}, username: ${el.innerHTML}`);
+					ChatView.show(el.getAttribute("chat_id"), el.innerHTML);
 				})
 			})
 
@@ -76,18 +82,22 @@ const DashboardView = {
 
 const ChatView = {
 	data: {
-		chatMessages: [{time: "2019-09-01 05:23:22", msg:"Where are you??"},
-				{receiver: true, time: "2019-09-01 05:49:67", msg:"Hello!!!"}],
+		// chatMessage Format: {(receiver: true,)msg_id:"", time: "", msg:""}
+		chatMessages: [],
 		receiver: "",
+		chat_id: -1,
+		old_msg_id: -1,
+		new_msg_id: -1
 	},
 
 	html: {
-		base: () => `
+		base: (username) => `
 			<div id="top-bar" class="horizontal full">
 				<input type="button" value="Go Back" id="go_back">
+				<div id="refresh_btn">Refresh</div>
 			</div>
 			<div id="app-body">
-				<input type="hidden" id="chat_id">
+				<div id="receiver-user">${username}</div>
 				<chat-messages>
 				</chat-messages>
 				<div class="horizontal full">
@@ -98,11 +108,11 @@ const ChatView = {
 		`,
 		message: (msg_data) => `
 			<message-bubble ${(!msg_data.receiver)?'class="flip"':''}>
-				<div id="msg-info" class="vertical">
-					<span id="username">${(msg_data.receiver)?ChatView.data.receiver:"You"}</span>
-					<span id="time">${msg_data.time}</span>
-				</div>
-				<div id="message">
+				<!--<div class="vertical msg-info">
+					<span class="username">${(msg_data.receiver)?ChatView.data.receiver:"You"}</span>
+					<span class="time">${msg_data.time}</span>
+				</div>-->
+				<div class="message" id="msg_${msg_data.msg_id}">
 					${msg_data.msg}
 				</div>
 			</message-bubble>
@@ -111,41 +121,108 @@ const ChatView = {
 	},
 
 	show: function (chat_id, receiver_username) { 
+		this.data.chat_id = chat_id;
 		this.data.receiver = receiver_username;
-		$('chat-app').style.width = "600px";
-		$('chat-app').innerHTML = this.html.base();
 
-		$('#chat_id').value = chat_id;
-		$('#go_back').addEventListener('click', () => {
-			DashboardView.show();
-		})
+		$('chat-app').style.width = "600px";
+		$('chat-app').innerHTML = this.html.base(receiver_username);
+
+		$('#go_back').addEventListener('click', () => DashboardView.show())
 		$('#send_msg').addEventListener('click', this.sendMessage);
+		$('#refresh_btn').addEventListener('click', this.getNewMessages);
+		
+		this.getMessages();
 		this.render();
 	},
 
 	getMessages: function () {
-		$xhrRequest('/ChatApp/messages', (res) => {
-			res = res.trim();
-			res = JSON.parse(res);
-			for (let json of res) {
-				let chatMessage = {msg:json.message,time:json.time}
+		$xhrRequest(
+			`/ChatApp/messages?type=${MessageType.CURRENT}&chat_id=${ChatView.data.chat_id}`,
+			(res) => {
+				console.log("GET[/messages] : " + res);
+				res = res.trim();
+				res = JSON.parse(res);
+				console.log("Cleaning JSON");
 
-				if (ChatView.receiver == json.sender)
-					chatMessage["receiver"] = true;
+				ChatView.data.chatMessages = []
+				ChatView.data.new_msg_id = res[0].msg_id;
 
-				ChatView.data.chatMessages.push(chatMessage)
+				for (let json of res) {
+					let chatMessage = {msg_id:json.msg_id, msg:json.message, time:json.time}
+
+					if (ChatView.data.receiver == json.sender)
+						chatMessage["receiver"] = true;
+
+					ChatView.data.chatMessages.unshift(chatMessage);
+					ChatView.data.old_msg_id = json.msg_id;
+				}
+				ChatView.render();
+				$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
 			}
-			ChatView.render();
-		})
+		)
+	},
+
+	getOldMessages: function () {
+		$xhrRequest(
+			`/ChatApp/messages
+				?type=${MessageType.OLD}
+				&chat_id=${ChatView.data.chat_id}
+				&msg_id=${ChatView.data.old_msg_id}`,
+			(res) => {
+				console.log("GET[/messages] : " + res);
+				res = res.trim();
+				res = JSON.parse(res);
+				console.log("Cleaning JSON");
+
+				for (let json of res) {
+					let chatMessage = {msg_id:json.msg_id, msg:json.message, time:json.time}
+
+					if (ChatView.data.receiver == json.sender)
+						chatMessage["receiver"] = true;
+
+					ChatView.data.chatMessages.unshift(chatMessage);
+					ChatView.data.old_msg_id = json.msg_id;
+				}
+				ChatView.render(false);
+			}
+		)
+	},
+
+	getNewMessages: function () {
+		$xhrRequest(
+			`/ChatApp/messages
+				?type=${MessageType.NEW}
+				&chat_id=${ChatView.data.chat_id}
+				&msg_id=${ChatView.data.new_msg_id}`,
+			(res) => {
+				console.log("GET[/messages] : " + res);
+				res = res.trim();
+				res = JSON.parse(res);
+				console.log("Cleaning JSON");
+
+				for (let json of res) {
+					let chatMessage = {msg_id:json.msg_id, msg:json.message, time:json.time}
+
+					if (ChatView.data.receiver == json.sender)
+						chatMessage["receiver"] = true;
+
+					ChatView.data.chatMessages.push(chatMessage);
+					ChatView.data.new_msg_id = json.msg_id;
+				}
+				ChatView.render();
+			}
+		)
 	},
 
 	sendMessage: function () {
 		$xhrPost('/ChatApp/message', 
 			{
-				chat_id:parseInt($("#chat_id").value),
+				chat_id: ChatView.data.chat_id,
 				message: $("#message").value
 			}, 
 			(res) => {
+				console.log("POST[/message] :" + res);
+				$('#message').value = "";
 				res = res.trim();
 				res = JSON.parse(res);
 				if (res.reply == true) {
@@ -157,10 +234,15 @@ const ChatView = {
 		)
 	},
 
-	render: function () {
-		//$('chat-messages').innerHTML = this.html.show_more
+	render: function (avoidScroll) {
+		$('chat-messages').innerHTML = this.html.show_more
 		for (let message of this.data.chatMessages)
 			$('chat-messages').innerHTML += this.html.message(message);
+
+		$('show-more').addEventListener('click', this.getOldMessages)
+		
+		if (avoidScroll !== false)
+			$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
 	}
 }
 

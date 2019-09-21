@@ -15,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Connection;
+import java.sql.Timestamp;
 
 import com.chatapp.util.DatabaseManager;
 
@@ -36,14 +37,16 @@ public class SendMessage extends HttpServlet {
 			throws ServletException, IOException 
 	{
 		PrintWriter out = response.getWriter();
-		String sender;
-		String chat_id = request.getParameter("chat_id");
+		String sender = null;
+		String chat_id_string = request.getParameter("chat_id");
 		String message = request.getParameter("message");
 		
-		if (chat_id == null || message == null) {
+		if (chat_id_string == null || message == null) {
 			out.println("{\"reply\":false}");
 			return;
 		}
+
+		int chat_id = Integer.parseInt(chat_id_string);
 
 		HttpSession session = request.getSession(false);
 
@@ -56,7 +59,7 @@ public class SendMessage extends HttpServlet {
 			return;
 		}
 
-		Timestamp datetime = sendMessage(chat_id, username, message);
+		Timestamp datetime = sendMessage(chat_id, sender, message);
 
 		if (datetime == null) {
 			out.println("{\"reply\":false}");
@@ -69,10 +72,12 @@ public class SendMessage extends HttpServlet {
 		out.close();
 	}
 
-	protected Timestamp sendMessage (int chat_id, String username, String message) {
+	protected Timestamp sendMessage (int chat_id, String sender, String message) {
 		System.out.println("Sending a message");
 		Connection conn = null;
 		PreparedStatement stmt = null;
+		ResultSet rs = null;
+
 		Timestamp datetime = null;
 
 		try {
@@ -85,8 +90,8 @@ public class SendMessage extends HttpServlet {
 			datetime = rs.getTimestamp("time");
 
 			stmt = conn.prepareStatement("INSERT INTO chats (chat_id, sender, message, time) VALUES (?,?,?,?)");
-			stmt.setString(1, chat_id);
-			stmt.setString(2, username);
+			stmt.setInt(1, chat_id);
+			stmt.setString(2, sender);
 			stmt.setString(3, message);
 			stmt.setTimestamp(4, datetime);
 			
@@ -94,6 +99,7 @@ public class SendMessage extends HttpServlet {
 		} catch (SQLException e) {
     		e.printStackTrace();
 		} finally {
+    		try { rs.close(); } catch (Exception e) {}
     		try { stmt.close(); } catch (Exception e) {}
     		try { conn.close(); } catch (Exception e) {}
 		}

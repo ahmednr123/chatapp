@@ -13,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Connection;
+import java.sql.Timestamp;
 
 import java.util.ArrayList;
 import com.chatapp.util.DatabaseManager;
@@ -20,10 +21,14 @@ import com.chatapp.util.DatabaseManager;
 /**
  * Servlet implementation class Dashboard
  */
-public class ActiveChats extends HttpServlet {
+public class GetMessages extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+
+	private static final int MESSAGE_TYPE_NEW = 0;
+	private static final int MESSAGE_TYPE_OLD = 1;
+	private static final int MESSAGE_TYPE_CURRENT = 2;
 	
-    public ActiveChats() {
+    public GetMessages() {
         super();
     }
 
@@ -36,9 +41,28 @@ public class ActiveChats extends HttpServlet {
 	{
 		PrintWriter out = response.getWriter();
 
+		// Maybe wrap these around try catch block while getting
+		// value instead of so many if statements
+		String chat_id_string = request.getParameter("chat_id");
+		String type_string = request.getParameter("type");
+		String msg_id_string = request.getParameter("msg_id");
+
 		HttpSession session = request.getSession(false);
 		String username = null;
-		int chat_id = request.getParameter("chat_id");
+
+		if (type_string == null || chat_id_string == null) {
+			System.out.println("Some or All Parameters missing");
+			out.println("false");
+			out.close();
+			return;
+		}
+
+		int chat_id = Integer.parseInt(chat_id_string);
+		int type = Integer.parseInt(type_string);
+		int msg_id = -1;
+
+		if (msg_id_string != null)
+			msg_id = Integer.parseInt(msg_id_string);
 
 		try {
 			username = (String)session.getAttribute("username");
@@ -49,7 +73,7 @@ public class ActiveChats extends HttpServlet {
 			return;
 		}
 
-		ArrayList<ChatMessage> chatMessages = getActiveChats(chat_id);
+		ArrayList<ChatMessage> chatMessages = getChatMessages(type, chat_id, msg_id);
 		out.println(ChatMessage.getJsonStringArray(chatMessages));
 		out.close();
 	}
@@ -65,7 +89,7 @@ public class ActiveChats extends HttpServlet {
 	}
 
 	protected
-	ArrayList<ChatMessage> getChatMessages (int chat_id) {
+	ArrayList<ChatMessage> getChatMessages (int type, int chat_id, int msg_id) {
 		Connection conn = null;
 		PreparedStatement stmt = null;
 		ResultSet res = null;
@@ -74,14 +98,33 @@ public class ActiveChats extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? ORDER BY time DESC");
-			stmt.setString(1, chat_id);
+
+			switch (type) {
+				case MESSAGE_TYPE_NEW:
+					System.out.println("GETTING NEW");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id>? ORDER BY msg_id ASC LIMIT 20");
+					stmt.setInt(1, chat_id);
+					stmt.setInt(2, msg_id);
+					break;
+				case MESSAGE_TYPE_OLD:
+					System.out.println("GETTING OLD");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id<? ORDER BY msg_id DESC LIMIT 20");
+					stmt.setInt(1, chat_id);
+					stmt.setInt(2, msg_id);
+					break;
+				case MESSAGE_TYPE_CURRENT:
+					System.out.println("GETTING CURRENT");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? ORDER BY msg_id DESC LIMIT 20");
+					stmt.setInt(1, chat_id);
+					break;
+			}
 
 			res = stmt.executeQuery();
 			while (res.next()) {
 				chatMessages.add(
-					new ChatMessage(res.getString("sender"), 
-						res.getString("message"), res.getTimestamp("time"))
+					new ChatMessage(res.getInt("msg_id"),
+						res.getString("sender"), res.getString("message"), 
+						res.getTimestamp("time"))
 				);
 			}
 		} catch (SQLException e) {
@@ -97,34 +140,40 @@ public class ActiveChats extends HttpServlet {
 }
 
 class ChatMessage {
+	private int msg_id;
 	private String sender;
 	private String message;
 	private String time;
 
-	public ChatMessage (String sender, String, message, Timestamp time) {
+	public ChatMessage (int msg_id, String sender, String message, Timestamp time) {
 		if (sender == null || message == null || time == null) {
-			throw NullPointerException();
+			throw new NullPointerException();
 		}
 
+		this.msg_id = msg_id;
 		this.sender = sender;
 		this.message = message;
 		this.time = time.toString();
 	}
 
 	public String toJsonString () {
-		return "{\"sender\":\"" + username 
+		return "{\"msg_id\": " + msg_id
+				+ ",\"sender\":\"" + sender 
 				+ "\", \"message\": \"" + message 
 				+ "\", \"time\": \"" + time + "\"}";
 	}
 
-	public static String toJsonStringArray (ArrayList<ChatMessage> chatMessages) {
+	public static String getJsonStringArray (ArrayList<ChatMessage> chatMessages) {
 		String arrayString = "[";
 
-		for (ChatMessage chatMessage : chatMessages) {
-			arrayString += chatMessage.toJsonString() + ",";
-		}
+		if (chatMessages.size() > 0) {
+			for (ChatMessage chatMessage : chatMessages) {
+				arrayString += chatMessage.toJsonString() + ",";
+			}
 
-		arrayString = arrayString.substring(0, arrayString.length() - 1);
+			arrayString = arrayString.substring(0, arrayString.length() - 1);
+		}
+		
 		return arrayString + "]";
 	}
 }

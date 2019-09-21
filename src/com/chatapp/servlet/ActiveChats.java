@@ -129,11 +129,14 @@ class ChatInfo {
 	public static String getJsonStringArray (ArrayList<ChatInfo> chats) {
 		String arrayString = "[";
 
-		for (ChatInfo chat : chats) {
-			arrayString += chat.toJsonString() + ",";
+		if (chats.size() > 0) {
+			for (ChatInfo chat : chats) {
+				arrayString += chat.toJsonString() + ",";
+			}
+
+			arrayString = arrayString.substring(0, arrayString.length() - 1);
 		}
 
-		arrayString = arrayString.substring(0, arrayString.length() - 1);
 		return arrayString + "]";
 	} 
 }

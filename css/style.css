@@ -78,8 +78,9 @@ chat-app {
 }
 
 #top-bar {
-	padding-bottom: 20px;
-	border-bottom: 1px solid lightgray;
+	/*padding-bottom: 20px;
+	border-bottom: 1px solid lightgray;*/
+	position: relative;
 }
 
 info-text {
@@ -127,7 +128,7 @@ chat-messages {
 	height: 60vh;
 	border-radius: 3px;
 	border: 1px solid lightgray;
-	margin: 20px 0px;
+	margin: 0px 0px 20px 0px;
 	overflow: auto;
 }
 
@@ -135,34 +136,68 @@ message-bubble {
 	display: block;
 	margin-bottom: 10px;
 	float: left;
+	width: 100%;
 }
 
-message-bubble #msg-info {
+message-bubble .msg-info {
 	margin-bottom: 5px;
 }
 
-message-bubble #username {
+message-bubble .username {
 	font-size: 14px;
 	font-weight: 600;
 	color: darkred;
 }
 
-message-bubble #time {
+message-bubble .time {
 	font-size: 10px;
 	color: grey;
 }
 
-message-bubble.flip {
-	float: right;
-	width: 100%;
+message-bubble .message {
+	background: #147efb;
+	border-radius: 16px;
+	padding: 7px 10px;
+	color: white;
+	max-width: 300px;
+	width: fit-content;
 }
 
-message-bubble.flip #username {
+message-bubble.flip {
+	float: right;
+}
+
+message-bubble.flip .username {
 	color: darkblue;
+}
+
+message-bubble.flip .message {
+	background: #eee;
+	color: black;
+	float: right;
 }
 
 message-bubble.flip * {
 	text-align: right;
+}
+
+#receiver-user {
+	margin: 10px 0px 8px 0px;
+	font-weight: 600;
+	text-align: center;
+}
+
+#refresh_btn {
+	font-size:12px;
+	color: royalblue;
+	position: absolute;
+	top: 12px;
+	right: 0px;
+	cursor: pointer;
+}
+
+#refresh_btn:hover {
+	font-weight: 600;
 }
 
 /* ======================== */

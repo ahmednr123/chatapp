@@ -41,7 +41,7 @@ public class SendMessage extends HttpServlet {
 		String message = request.getParameter("message");
 		
 		if (chat_id == null || message == null) {
-			out.println("false");
+			out.println("{\"reply\":false}");
 			return;
 		}
 
@@ -51,39 +51,46 @@ public class SendMessage extends HttpServlet {
 			sender = (String) session.getAttribute("username");
 		} catch (NullPointerException e) {
 			System.out.println("session not found!");
-			out.println("false");
+			out.println("{\"reply\":false}");
 			out.close();
 			return;
 		}
 
-		boolean isMessageSent = sendMessage(chat_id, username, message);
+		Timestamp datetime = sendMessage(chat_id, username, message);
 
-		if (!isMessageSent) {
-			out.println("false");
+		if (datetime == null) {
+			out.println("{\"reply\":false}");
 			out.close();
 			return;
 		}
 
-		out.println("true");
+		out.println("{\"reply\":true,\"message\": \"" + message 
+						+ "\", \"time\": \"" + datetime.toString() + "\"}");
 		out.close();
 	}
 
-	protected boolean sendMessage (int chat_id, String username, String message) {
+	protected Timestamp sendMessage (int chat_id, String username, String message) {
 		System.out.println("Sending a message");
 		Connection conn = null;
 		PreparedStatement stmt = null;
-
-		boolean isMessageSent = false;
+		Timestamp datetime = null;
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("INSERT INTO chats (chat_id, sender, message, time) VALUES (?,?,?,NOW())");
+
+			stmt = conn.prepareStatement("SELECT NOW() as time");
+			rs = stmt.executeQuery(); 
+			rs.next();
+			
+			datetime = rs.getTimestamp("time");
+
+			stmt = conn.prepareStatement("INSERT INTO chats (chat_id, sender, message, time) VALUES (?,?,?,?)");
 			stmt.setString(1, chat_id);
 			stmt.setString(2, username);
 			stmt.setString(3, message);
+			stmt.setTimestamp(4, datetime);
 			
 			stmt.executeUpdate();
-			isMessageSent = true;
 		} catch (SQLException e) {
     		e.printStackTrace();
 		} finally {
@@ -91,6 +98,6 @@ public class SendMessage extends HttpServlet {
     		try { conn.close(); } catch (Exception e) {}
 		}
 
-		return isMessageSent;
+		return datetime;
 	}
 }

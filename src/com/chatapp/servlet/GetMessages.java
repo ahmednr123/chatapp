@@ -80,9 +80,8 @@ public class ActiveChats extends HttpServlet {
 			res = stmt.executeQuery();
 			while (res.next()) {
 				chatMessages.add(
-					new ChatMessage(res.getInt("chat_id"), 
-						res.getString("sender"), res.getString("message"),
-						res.getTimestamp("time"))
+					new ChatMessage(res.getString("sender"), 
+						res.getString("message"), res.getTimestamp("time"))
 				);
 			}
 		} catch (SQLException e) {
@@ -98,27 +97,24 @@ public class ActiveChats extends HttpServlet {
 }
 
 class ChatMessage {
-	private int chat_id;
 	private String sender;
 	private String message;
 	private String time;
 
-	public ChatMessage (int chat_id, String sender, String, message, Timestamp time) {
+	public ChatMessage (String sender, String, message, Timestamp time) {
 		if (sender == null || message == null || time == null) {
 			throw NullPointerException();
 		}
 
-		this.chat_id = chat_id;
 		this.sender = sender;
 		this.message = message;
 		this.time = time.toString();
 	}
 
 	public String toJsonString () {
-		return "{\"chat_id\":" + chat_id + 
-				",\"sender\":\"" + username + 
-				",\"message\": \"" + message + 
-				",\"time\": \"" + time + "\"}";
+		return "{\"sender\":\"" + username 
+				+ "\", \"message\": \"" + message 
+				+ "\", \"time\": \"" + time + "\"}";
 	}
 
 	public static String toJsonStringArray (ArrayList<ChatMessage> chatMessages) {

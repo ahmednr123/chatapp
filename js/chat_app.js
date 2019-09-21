@@ -76,7 +76,7 @@ const DashboardView = {
 
 const ChatView = {
 	data: {
-		chats: [{time: "2019-09-01 05:23:22", msg:"Where are you??"},
+		chatMessages: [{time: "2019-09-01 05:23:22", msg:"Where are you??"},
 				{receiver: true, time: "2019-09-01 05:49:67", msg:"Hello!!!"}],
 		receiver: "",
 	},
@@ -87,6 +87,7 @@ const ChatView = {
 				<input type="button" value="Go Back" id="go_back">
 			</div>
 			<div id="app-body">
+				<input type="hidden" id="chat_id">
 				<chat-messages>
 				</chat-messages>
 				<div class="horizontal full">
@@ -109,10 +110,12 @@ const ChatView = {
 		show_more: `<show-more>Show more</show-more>`
 	},
 
-	show: function (receiver_username) { 
+	show: function (chat_id, receiver_username) { 
 		this.data.receiver = receiver_username;
 		$('chat-app').style.width = "600px";
 		$('chat-app').innerHTML = this.html.base();
+
+		$('#chat_id').value = chat_id;
 		$('#go_back').addEventListener('click', () => {
 			DashboardView.show();
 		})
@@ -120,13 +123,43 @@ const ChatView = {
 		this.render();
 	},
 
+	getMessages: function () {
+		$xhrRequest('/ChatApp/messages', (res) => {
+			res = res.trim();
+			res = JSON.parse(res);
+			for (let json of res) {
+				let chatMessage = {msg:json.message,time:json.time}
+
+				if (ChatView.receiver == json.sender)
+					chatMessage["receiver"] = true;
+
+				ChatView.data.chatMessages.push(chatMessage)
+			}
+			ChatView.render();
+		})
+	},
+
 	sendMessage: function () {
-		alert("sent message to:" + this.data.receiver);
+		$xhrPost('/ChatApp/message', 
+			{
+				chat_id:parseInt($("#chat_id").value),
+				message: $("#message").value
+			}, 
+			(res) => {
+				res = res.trim();
+				res = JSON.parse(res);
+				if (res.reply == true) {
+					let json = {msg: res.message, time: res.time};
+					let msgHTML = ChatView.html.message(json);
+					$('chat-messages').innerHTML += msgHTML;
+				}
+			}
+		)
 	},
 
 	render: function () {
-		$('chat-messages').innerHTML = this.html.show_more
-		for (let message of this.data.chats)
+		//$('chat-messages').innerHTML = this.html.show_more
+		for (let message of this.data.chatMessages)
 			$('chat-messages').innerHTML += this.html.message(message);
 	}
 }

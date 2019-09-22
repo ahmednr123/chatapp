@@ -90,7 +90,7 @@ public class ActiveChats extends HttpServlet {
 					receiver = user_two;
 				}
 
-				activeChats.add(new ChatInfo(res.getInt("chat_id"), receiver));
+				activeChats.add(new ChatInfo(res.getInt("chat_id"), receiver, res.getString("message_key")));
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -107,30 +107,31 @@ public class ActiveChats extends HttpServlet {
 class ChatInfo {
 	private int chat_id;
 	private String username;
+	private String message_key;
 
 	public 
-	ChatInfo (int chat_id, String username) {
-		if (username == null) {
+	ChatInfo (int chat_id, String username, String message_key) {
+		if (username == null || message_key == null) {
 			throw new NullPointerException();
 		}
 
 		this.chat_id = chat_id;
 		this.username = username;
+		this.message_key = message_key;
 	}
 
 	public String toJsonString () {
 		return "{\"chat_id\":" + chat_id + 
-				", \"username\":\"" + username + "\"}";
+				", \"username\":\"" + username + 
+				"\", \"message_key\":\"" + message_key + "\"}";
 	}
 
-	/**
-	* This method needs to throw exception if ArrayList is empty
-	*/
 	public static String getJsonStringArray (ArrayList<ChatInfo> chats) {
 		String arrayString = "[";
 
 		if (chats.size() > 0) {
 			for (ChatInfo chat : chats) {
+				System.out.println(chat.toJsonString());
 				arrayString += chat.toJsonString() + ",";
 			}
 

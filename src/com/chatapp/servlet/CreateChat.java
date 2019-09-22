@@ -38,11 +38,6 @@ public class CreateChat extends HttpServlet {
 		PrintWriter out = response.getWriter();
 		String sender;
 		String receiver = request.getParameter("receiver");
-		
-		if (receiver == null) {
-			out.println("false");
-			return;
-		}
 
 		HttpSession session = request.getSession(false);
 
@@ -54,7 +49,13 @@ public class CreateChat extends HttpServlet {
 			return;
 		}
 
-		boolean isChatCreated = createChat(sender, receiver);
+		if (receiver == null || (sender == receiver)) {
+			out.println("false");
+			return;
+		}
+
+		String message_key = randomKey(20);
+		boolean isChatCreated = createChat(sender, receiver, message_key);
 
 		if (!isChatCreated) {
 			out.println("err");
@@ -71,7 +72,7 @@ public class CreateChat extends HttpServlet {
 	*	  so that you can reply to the client accordingly
 	*/
 	protected
-	boolean createChat (String sender, String receiver) {
+	boolean createChat (String sender, String receiver, String message_key) {
 		System.out.println("Creating a chat");
 		Connection conn = null;
 		PreparedStatement stmt = null;
@@ -86,9 +87,10 @@ public class CreateChat extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("INSERT INTO chat_manager (user_one, user_two) VALUES (?,?)");
+			stmt = conn.prepareStatement("INSERT INTO chat_manager (user_one, user_two, message_key) VALUES (?,?,?)");
 			stmt.setString(1, sender);
 			stmt.setString(2, receiver);
+			stmt.setString(3, message_key);
 			
 			stmt.executeUpdate();
 			isChatCreated = true;
@@ -135,5 +137,21 @@ public class CreateChat extends HttpServlet {
 		}
 
 		return doesChatExist;
+	}
+
+
+	protected static 
+	final String ALPHA_NUMERIC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	
+	protected 
+	static String randomKey(int count) {
+		StringBuilder builder = new StringBuilder();
+
+		while (count-- != 0) {
+			int character = (int)(Math.random()*ALPHA_NUMERIC_STRING.length());
+			builder.append(ALPHA_NUMERIC_STRING.charAt(character));
+		}
+
+		return builder.toString();
 	}
 }

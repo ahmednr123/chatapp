@@ -159,7 +159,7 @@ message-bubble .message {
 	border-radius: 16px;
 	padding: 7px 10px;
 	color: white;
-	max-width: 300px;
+	max-width: 310px;
 	width: fit-content;
 }
 

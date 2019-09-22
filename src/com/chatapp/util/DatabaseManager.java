@@ -17,7 +17,7 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
  */
 public class DatabaseManager {
 	private static DataSource dataSource;
-	private static Logger LOGGER = Logger.getLogger("DatabaseManager");
+	private static Logger LOGGER = Logger.getLogger(DatabaseManager.class.getName());
 	
 	private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";  
 	private static final String DB_URL = "jdbc:mysql://localhost/login_app";

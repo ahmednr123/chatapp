@@ -14,12 +14,14 @@ import java.sql.ResultSet;
 import java.sql.Connection;
 
 import com.chatapp.util.DatabaseManager;
+import java.util.logging.Logger;
 
 /**
  * Servlet implementation class Login
  */
 public class Login extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static Logger LOGGER = Logger.getLogger(Login.class.getName());
 
     /**
      * Default constructor. 
@@ -49,10 +51,7 @@ public class Login extends HttpServlet {
 		String username = request.getParameter("username");
 		String password = request.getParameter("password");
 
-		System.out.println("Authentication Request!");
-		
-		System.out.println("Username: " + username);
-		System.out.println("Password: " + password);
+		//LOGGER.info("");
 		
 		boolean isUserValid = validateUser(username, password);
 

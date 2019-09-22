@@ -10,6 +10,7 @@ const ChatView = {
 		chat_id: -1,
 		old_msg_id: -1,
 		new_msg_id: -1,
+		msg_key:"",
 		more: false
 	},
 
@@ -43,7 +44,7 @@ const ChatView = {
 		show_more: `<show-more>Show more</show-more>`
 	},
 
-	show: function (chat_id, receiver_username) { 
+	show: function (chat_id, receiver_username, msg_key) { 
 		this.data = {
 			// chatMessage Format: {(receiver: true,)msg_id:"", time: "", msg:""}
 			chatMessages: [],
@@ -51,6 +52,7 @@ const ChatView = {
 			chat_id: chat_id,
 			old_msg_id: -1,
 			new_msg_id: -1,
+			msg_key: msg_key,
 			more: false,
 			avoidScroll: false
 		}
@@ -90,14 +92,19 @@ const ChatView = {
 				}
 
 				if (type == MessageType.CURRENT || type == MessageType.OLD) {
-					if (res.length >= 20)
+					if (res.length >= 10)
 						ChatView.data.more = true;
 					else
 						ChatView.data.more = false;
 				}
 
 				for (let json of res) {
-					let chatMessage = {msg_id:json.msg_id, msg:json.message, time:json.time}
+					let chatMessage = 
+						{
+							msg_id: json.msg_id, 
+							msg: Decrypt(json.message, ChatView.data.msg_key), 
+							time: json.time
+						}
 
 					if (ChatView.data.receiver == json.sender)
 						chatMessage["receiver"] = true;
@@ -126,7 +133,7 @@ const ChatView = {
 		$xhrPost('/ChatApp/message', 
 			{
 				chat_id: ChatView.data.chat_id,
-				message: $("#message").value
+				message: Encrypt($("#message").value, ChatView.data.msg_key)
 			}, 
 			(res) => {
 				console.log("POST[/message] :" + res);
@@ -134,7 +141,11 @@ const ChatView = {
 				res = res.trim();
 				res = JSON.parse(res);
 				if (res.reply == true) {
-					let json = {msg: res.message, time: res.time};
+					let json = 
+						{
+							msg: Decrypt(res.message, ChatView.data.msg_key),
+							time: res.time
+						};
 					let msgHTML = ChatView.html.message(json);
 					$('chat-messages').innerHTML += msgHTML;
 				}
@@ -147,9 +158,11 @@ const ChatView = {
 
 		if(this.data.more) {
 			$('chat-messages').innerHTML = this.html.show_more;
-			$('show-more').addEventListener('click', 
-				this.getMessages(MessageType.OLD, this.data.old_msg_id)
-			);
+			setTimeout(function () {
+				$('show-more').addEventListener('click', () => {
+					ChatView.getMessages(MessageType.OLD, ChatView.data.old_msg_id)
+				});
+			}, 200)
 		}
 		
 		for (let message of this.data.chatMessages)
@@ -159,3 +172,33 @@ const ChatView = {
 			$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
 	}
 }
+
+// ====================================================== //
+// SimpleCrypto.js======================================= //
+
+function Encrypt (content, passcode) {
+	console.log(typeof(passcode))
+	var result = []; var passLen = passcode.length ;
+	for(var i = 0  ; i < content.length ; i++) {
+		var passOffset = i%passLen ;
+		var calAscii = (content.charCodeAt(i)+passcode.charCodeAt(passOffset));
+		result.push(calAscii);
+	}
+	return JSON.stringify(result);
+}
+
+function Decrypt (content, passcode) {
+	var result = [];var str = '';
+	var codesArr = JSON.parse(content);var passLen = passcode.length ;
+	for(var i = 0  ; i < codesArr.length ; i++) {
+		var passOffset = i%passLen ;
+		var calAscii = (codesArr[i]-passcode.charCodeAt(passOffset));
+		result.push(calAscii) ;
+	}
+	for(var i = 0 ; i < result.length ; i++) {
+		var ch = String.fromCharCode(result[i]); str += ch ;
+	}
+	return str;
+}
+
+// ======================================================= //

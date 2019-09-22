@@ -8,7 +8,7 @@
     </target>
 
     <target name="clean" depends="init">
-        <deltree dir="${outputDir}" />
+        <delete dir="${outputDir}" />
     </target>
 
     <target name="prepare" depends="clean">

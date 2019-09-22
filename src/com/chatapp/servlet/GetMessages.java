@@ -32,60 +32,51 @@ public class GetMessages extends HttpServlet {
         super();
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doGet(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
 	{
 		PrintWriter out = response.getWriter();
 
-		// Maybe wrap these around try catch block while getting
-		// value instead of so many if statements
-		String chat_id_string = request.getParameter("chat_id");
-		String type_string = request.getParameter("type");
-		String msg_id_string = request.getParameter("msg_id");
-
 		HttpSession session = request.getSession(false);
 		String username = null;
 
-		if (type_string == null || chat_id_string == null) {
-			System.out.println("Some or All Parameters missing");
-			out.println("false");
-			out.close();
-			return;
-		}
-
-		int chat_id = Integer.parseInt(chat_id_string);
-		int type = Integer.parseInt(type_string);
-		int msg_id = -1;
-
-		if (msg_id_string != null)
-			msg_id = Integer.parseInt(msg_id_string);
+		int chat_id, type, msg_id;
 
 		try {
+			chat_id = Integer.parseInt(request.getParameter("chat_id"));
+			type = Integer.parseInt(request.getParameter("type"));
 			username = (String)session.getAttribute("username");
 		} catch (NullPointerException e) {
-			System.out.println("No Session");
 			out.println("false");
 			out.close();
 			return;
 		}
 
-		ArrayList<ChatMessage> chatMessages = getChatMessages(type, chat_id, msg_id);
+		ArrayList<ChatMessage> chatMessages;
+		String msg_id_string = request.getParameter("msg_id");
+
+		if (msg_id_string == null) {
+			chatMessages = getChatMessages(type, chat_id);
+		} else {
+			msg_id = Integer.parseInt(msg_id_string);
+			chatMessages = getChatMessages(type, chat_id, msg_id);
+		}
+
 		out.println(ChatMessage.getJsonStringArray(chatMessages));
 		out.close();
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doPost(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
 	{
 		doGet(request, response);
+	}
+
+	protected
+	ArrayList<ChatMessage> getChatMessages (int type, int chat_id) {
+		return getChatMessages (type, chat_id, -1);
 	}
 
 	protected
@@ -102,19 +93,19 @@ public class GetMessages extends HttpServlet {
 			switch (type) {
 				case MESSAGE_TYPE_NEW:
 					System.out.println("GETTING NEW");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id>? ORDER BY msg_id ASC LIMIT 20");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id>? ORDER BY msg_id ASC LIMIT 10");
 					stmt.setInt(1, chat_id);
 					stmt.setInt(2, msg_id);
 					break;
 				case MESSAGE_TYPE_OLD:
 					System.out.println("GETTING OLD");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id<? ORDER BY msg_id DESC LIMIT 20");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id<? ORDER BY msg_id DESC LIMIT 10");
 					stmt.setInt(1, chat_id);
 					stmt.setInt(2, msg_id);
 					break;
 				case MESSAGE_TYPE_CURRENT:
 					System.out.println("GETTING CURRENT");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? ORDER BY msg_id DESC LIMIT 20");
+					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? ORDER BY msg_id DESC LIMIT 10");
 					stmt.setInt(1, chat_id);
 					break;
 			}

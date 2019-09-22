@@ -20,8 +20,8 @@ const DashboardView = {
 			el.innerHTML = str;
 			return el;
 		},
-		add_chat: (id, username) => `
-			<chat-user chat_id="${id}">${username}</chat-user>
+		add_chat: (id, username, msg_key) => `
+			<chat-user chat_id="${id}" msg_key="${msg_key}">${username}</chat-user>
 		`
 	},
 
@@ -38,6 +38,10 @@ const DashboardView = {
 			res = res.trim();
 			if (res == "true") {
 				DashboardView.updateChats(_xhr);
+			} else if (res == "false") {
+				alert("The chat with the user already exists");
+			} else if (res == "err") {
+				alert("Server error");
 			}
 		})
 	},
@@ -61,12 +65,13 @@ const DashboardView = {
 		else 
 		{
 			for (let json of this.data.chats)
-				$('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username);
+				$('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username, json.message_key);
 
 			$forEach('chat-user', (el) => {
 				el.addEventListener('click', function () {
-					console.log(`chat_id: ${el.getAttribute("chat_id")}, username: ${el.innerHTML}`);
-					ChatView.show(el.getAttribute("chat_id"), el.innerHTML);
+					console.log(`chat_id: ${el.getAttribute("chat_id")}, username: ${el.innerHTML}, 
+									msg_key:${el.getAttribute("msg_key")}`);
+					ChatView.show(el.getAttribute("chat_id"), el.innerHTML, el.getAttribute("msg_key"));
 				})
 			})
 

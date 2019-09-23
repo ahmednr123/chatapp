@@ -19,7 +19,7 @@ import java.util.logging.Logger;
 /**
  *  - Route: /login
  *	- GET
- *		Redirct to /ChatApp/login.html
+ *		Redirect to /ChatApp/login.html
  *	- POST
  *		@param username 
  *		@param password

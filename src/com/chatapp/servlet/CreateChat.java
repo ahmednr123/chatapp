@@ -59,10 +59,14 @@ public class CreateChat extends HttpServlet {
 			return;
 		}
 
+		// Check if appropriate parameters are passed with the request
+		// and also check if the sender is not creating a chat with himself
 		if (receiver == null || (sender == receiver)) {
 			out.println("false");
 			return;
 		}
+
+		LOGGER.info("Creating chat between \n[User]: " + sender + " and [User]: " + receiver);
 
 		String message_key = randomKey(20);
 		boolean isChatCreated = createChat(sender, receiver, message_key);

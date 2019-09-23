@@ -107,14 +107,14 @@ public class GetMessages extends HttpServlet {
 	 * To retreive chat messages from the database
 	 *
 	 * Three types of messages can be retreived from the database:
-	 *		NEW
-	 *			retreives atmost 20 messages from the database 
+	 *		MESSAGE_TYPE_NEW
+	 *			retreives atmost 10 messages from the database 
 	 *			(messages after the given msg_id)
-	 *		OLD
-	 *			retreives atmost 20 messages from the database
+	 *		MESSAGE_TYPE_OLD
+	 *			retreives atmost 10 messages from the database
 	 *			(messages before the given msg_id)
-	 *		CURRENT
-	 *			retreives atmost 20 latest messages from the database
+	 *		MESSAGE_TYPE_CURRENT
+	 *			retreives atmost 10 latest messages from the database
 	 * 
 	 * @param type Type of the messages needed to fetch from the database
 	 * @param chat_id Unique Chat ID corresponding to individual user chats

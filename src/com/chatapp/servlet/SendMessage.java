@@ -50,14 +50,6 @@ public class SendMessage extends HttpServlet {
 		String sender = null;
 		String chat_id_string = request.getParameter("chat_id");
 		String message = request.getParameter("message");
-		
-		if (chat_id_string == null || message == null) {
-			LOGGER.info("Not enough parameter passed");
-			out.println("{\"reply\":false}");
-			return;
-		}
-
-		int chat_id = Integer.parseInt(chat_id_string);
 
 		HttpSession session = request.getSession(false);
 
@@ -69,6 +61,21 @@ public class SendMessage extends HttpServlet {
 			out.close();
 			return;
 		}
+
+		// Check if appropriate parameters are passed with the request
+		if (chat_id_string == null || message == null) {
+			LOGGER.info("Not enough parameter passed");
+			out.println("{\"reply\":false}");
+			return;
+		}
+
+		if (message == "") {
+			LOGGER.info("Empty message parameter received");
+			out.println("{\"reply\":false}");
+			return;
+		}
+
+		int chat_id = Integer.parseInt(chat_id_string);
 
 		Timestamp datetime = sendMessage(chat_id, sender, message);
 

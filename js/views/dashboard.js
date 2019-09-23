@@ -41,7 +41,7 @@ const DashboardView = {
 			} else if (res == "false") {
 				alert("The chat with the user already exists");
 			} else if (res == "err") {
-				alert("Server error");
+				alert("User not found");
 			}
 		})
 	},

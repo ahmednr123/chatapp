@@ -17,33 +17,30 @@ import com.chatapp.util.DatabaseManager;
 import java.util.logging.Logger;
 
 /**
- * Servlet implementation class Login
+ *  - Route: /login
+ *	- GET
+ *		Redirct to /ChatApp/login.html
+ *	- POST
+ *		@param username 
+ *		@param password
+ *		(onPass Redirect) /ChatApp/chat_app.html
+ *		(onFail Redirect) /ChatApp/auth_fail.html
  */
 public class Login extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOGGER = Logger.getLogger(Login.class.getName());
 
-    /**
-     * Default constructor. 
-     */
-	
     public Login() {
         super();
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doGet(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
 	{
-		response.sendRedirect("/LoginSession/login.html");
+		response.sendRedirect("/ChatApp/login.html");
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doPost(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
@@ -51,7 +48,7 @@ public class Login extends HttpServlet {
 		String username = request.getParameter("username");
 		String password = request.getParameter("password");
 
-		//LOGGER.info("");
+		LOGGER.info("Authentication request: \nUser: " + username + "\nPassword: " + password);
 		
 		boolean isUserValid = validateUser(username, password);
 
@@ -92,7 +89,9 @@ public class Login extends HttpServlet {
         		isUserValid = true;
         	}
     	} catch (SQLException e) {
-    		e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
+    	} catch (Exception e) {
+    		LOGGER.severe(e.getMessage());
     	} finally {
     		try { stmt.close(); } catch (Exception e) {}
     		try { rs.close(); } catch (Exception e) {}
@@ -101,5 +100,4 @@ public class Login extends HttpServlet {
     	
     	return isUserValid;
 	}
-
 }

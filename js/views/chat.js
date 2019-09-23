@@ -148,6 +148,10 @@ const ChatView = {
 						};
 					let msgHTML = ChatView.html.message(json);
 					$('chat-messages').innerHTML += msgHTML;
+					
+					setTimeout(function () {
+						$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
+					}, 200)
 				}
 			}
 		)
@@ -168,7 +172,7 @@ const ChatView = {
 		for (let message of this.data.chatMessages)
 			$('chat-messages').innerHTML += this.html.message(message);
 		
-		if (this.data.scroll === true)
+		if (this.data.scroll)
 			$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
 	}
 }

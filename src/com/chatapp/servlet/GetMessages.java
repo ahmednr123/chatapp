@@ -1,5 +1,8 @@
 package com.chatapp.servlet;
 
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -15,14 +18,21 @@ import java.sql.ResultSet;
 import java.sql.Connection;
 import java.sql.Timestamp;
 
-import java.util.ArrayList;
 import com.chatapp.util.DatabaseManager;
 
 /**
- * Servlet implementation class Dashboard
+ *  - Route: /messages
+ *	- GET
+ *		@param type Type of messages to get from database
+ *		@param chat_id Chat ID corresponding to the users chat
+ *		@param msg_id [OPTIONAL] Message ID use dependent on the type of messages required
+ *		@param username (FROM SESSION)
+ *		(json reply) Array of Chat Messages
+ *		(onFail reply) false
  */
 public class GetMessages extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static Logger LOGGER = Logger.getLogger(GetMessages.class.getName());
 
 	private static final int MESSAGE_TYPE_NEW = 0;
 	private static final int MESSAGE_TYPE_OLD = 1;
@@ -43,6 +53,8 @@ public class GetMessages extends HttpServlet {
 
 		int chat_id, type, msg_id;
 
+		// Check if appropriate parameters are passed with the request
+		// Also check if a user session exists
 		try {
 			chat_id = Integer.parseInt(request.getParameter("chat_id"));
 			type = Integer.parseInt(request.getParameter("type"));
@@ -54,14 +66,18 @@ public class GetMessages extends HttpServlet {
 		}
 
 		ArrayList<ChatMessage> chatMessages;
-		String msg_id_string = request.getParameter("msg_id");
 
-		if (msg_id_string == null) {
+		// msg_id (Optional Parameter)
+		// Check if msg_id is passed and accordingly execute
+		// the getChatMessages method
+		if (request.getParameter("msg_id") == null) {
 			chatMessages = getChatMessages(type, chat_id);
 		} else {
-			msg_id = Integer.parseInt(msg_id_string);
+			msg_id = Integer.parseInt(request.getParameter("msg_id"));
 			chatMessages = getChatMessages(type, chat_id, msg_id);
 		}
+
+		LOGGER.info("Get Messages request! \nchat_id: " + chat_id + " \ntype: " + type);
 
 		out.println(ChatMessage.getJsonStringArray(chatMessages));
 		out.close();
@@ -74,11 +90,38 @@ public class GetMessages extends HttpServlet {
 		doGet(request, response);
 	}
 
+	/**
+	 * To retreive chat messages from the database
+	 * 
+	 * @param type Type of the messages needed to fetch from the database
+	 * @param chat_id Unique Chat ID corresponding to individual user chats
+	 * @return ArrayList<ChatMessages> 
+	 *					Array of chat messages retreived from the database 
+	 */
 	protected
 	ArrayList<ChatMessage> getChatMessages (int type, int chat_id) {
 		return getChatMessages (type, chat_id, -1);
 	}
 
+	/**
+	 * To retreive chat messages from the database
+	 *
+	 * Three types of messages can be retreived from the database:
+	 *		NEW
+	 *			retreives atmost 20 messages from the database 
+	 *			(messages after the given msg_id)
+	 *		OLD
+	 *			retreives atmost 20 messages from the database
+	 *			(messages before the given msg_id)
+	 *		CURRENT
+	 *			retreives atmost 20 latest messages from the database
+	 * 
+	 * @param type Type of the messages needed to fetch from the database
+	 * @param chat_id Unique Chat ID corresponding to individual user chats
+	 * @param msg_id Message ID used as per the type of messages to be retreived
+	 * @return ArrayList<ChatMessages> 
+	 *					Array of chat messages retreived from the database 
+	 */
 	protected
 	ArrayList<ChatMessage> getChatMessages (int type, int chat_id, int msg_id) {
 		Connection conn = null;
@@ -119,7 +162,9 @@ public class GetMessages extends HttpServlet {
 				);
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+			LOGGER.severe(e.getMessage());
+		} catch (Exception e) {
+    		LOGGER.severe(e.getMessage());
 		} finally {
 			try { res.close(); } catch (Exception e) {}
 			try { stmt.close(); } catch (Exception e) {}

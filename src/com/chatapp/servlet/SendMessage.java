@@ -1,6 +1,7 @@
 package com.chatapp.servlet;
 
-import java.util.Enumeration;
+import java.util.Calendar;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -19,7 +20,16 @@ import java.sql.Timestamp;
 
 import com.chatapp.util.DatabaseManager;
 
+/**
+ *  - Route: /message
+ *	- POST
+ *		@param chat_id Chat ID corresponding to the users chat
+ *		@param username (FROM SESSION)
+ *		(json reply) message with timestamp
+ *		(onFail reply) false
+ */
 public class SendMessage extends HttpServlet {
+	private static Logger LOGGER = Logger.getLogger(SendMessage.class.getName());
 
 	public SendMessage () {
 		super();
@@ -42,6 +52,7 @@ public class SendMessage extends HttpServlet {
 		String message = request.getParameter("message");
 		
 		if (chat_id_string == null || message == null) {
+			LOGGER.info("Not enough parameter passed");
 			out.println("{\"reply\":false}");
 			return;
 		}
@@ -53,7 +64,7 @@ public class SendMessage extends HttpServlet {
 		try {
 			sender = (String) session.getAttribute("username");
 		} catch (NullPointerException e) {
-			System.out.println("session not found!");
+			LOGGER.info("User session not found");
 			out.println("{\"reply\":false}");
 			out.close();
 			return;
@@ -72,7 +83,18 @@ public class SendMessage extends HttpServlet {
 		out.close();
 	}
 
-	protected Timestamp sendMessage (int chat_id, String sender, String message) {
+	/**
+	 * Insert chat message to the database
+	 * 
+	 * @param chat_id Unique Chat ID corresponding to individual user chats
+	 * @param sender User sending message to the Chat
+	 * @param message Chat Message
+	 * @return Timestamp
+	 *					Timestamp of the message stored in the database
+	 */
+	protected 
+	Timestamp sendMessage (int chat_id, String sender, String message) 
+	{
 		System.out.println("Sending a message");
 		Connection conn = null;
 		PreparedStatement stmt = null;
@@ -83,11 +105,8 @@ public class SendMessage extends HttpServlet {
 		try {
 			conn = DatabaseManager.getConnection();
 
-			stmt = conn.prepareStatement("SELECT NOW() as time");
-			rs = stmt.executeQuery(); 
-			rs.next();
-			
-			datetime = rs.getTimestamp("time");
+			Calendar calendar = Calendar.getInstance();
+			datetime = new Timestamp(calendar.getTime().getTime());
 
 			stmt = conn.prepareStatement("INSERT INTO chats (chat_id, sender, message, time) VALUES (?,?,?,?)");
 			stmt.setInt(1, chat_id);
@@ -97,7 +116,7 @@ public class SendMessage extends HttpServlet {
 			
 			stmt.executeUpdate();
 		} catch (SQLException e) {
-    		e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
 		} finally {
     		try { rs.close(); } catch (Exception e) {}
     		try { stmt.close(); } catch (Exception e) {}

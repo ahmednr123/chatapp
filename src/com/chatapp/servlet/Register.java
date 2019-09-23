@@ -14,23 +14,26 @@ import java.sql.ResultSet;
 import java.sql.Connection;
 
 import com.chatapp.util.DatabaseManager;
+import java.util.logging.Logger;
 
 /**
- * Servlet implementation class Signup
+ *  - Route: /register
+ *	- GET
+ *		Redirct to /ChatApp/register.html
+ *	- POST
+ *		@param username 
+ *		@param password
+ *		(onPass Redirect) /ChatApp/chat_app.html
+ *		(onFail Redirect) /ChatApp/db_error.html
  */
 public class Register extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-       
-    /**
-     * @see HttpServlet#HttpServlet()
-     */
+	private static Logger LOGGER = Logger.getLogger(Register.class.getName());
+
     public Register() {
         super();
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doGet(HttpServletRequest request, HttpServletResponse response) 
 		throws ServletException, IOException 
@@ -38,20 +41,14 @@ public class Register extends HttpServlet {
 		response.sendRedirect("/ChatApp/register.html");
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doPost(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
 	{
 		String username = request.getParameter("username");
 		String password = request.getParameter("password");
-		
-		System.out.println("Registration Request!");
-		
-		System.out.println("Username: " + username);
-		System.out.println("Password: " + password);
+
+		LOGGER.info("Registration request: \nUser: " + username + "\nPassword: " + password);
 		
 		boolean isUserRegistered = registerUser(username, password);
 		
@@ -88,7 +85,7 @@ public class Register extends HttpServlet {
     		stmt.executeUpdate();
     		isUserRegistered = true;
     	} catch (SQLException e) {
-    		e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
     	} finally {
     		try { stmt.close(); } catch (Exception e) {}
     		try { conn.close(); } catch (Exception e) {}

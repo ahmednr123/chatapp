@@ -1,5 +1,8 @@
 package com.chatapp.servlet;
 
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 
@@ -14,22 +17,23 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.sql.Connection;
 
-import java.util.ArrayList;
 import com.chatapp.util.DatabaseManager;
 
 /**
- * Servlet implementation class Dashboard
+ *  - Route: /active_chats
+ *	- GET
+ *		@param username (FROM SESSION)
+ *		(json reply) Array of Active Chats Info
+ *		(onFail reply) false
  */
 public class ActiveChats extends HttpServlet {
 	private static final long serialVersionUID = 1L;
+	private static Logger LOGGER = Logger.getLogger(ActiveChats.class.getName());
 	
     public ActiveChats() {
         super();
     }
 
-	/**
-	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doGet(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
@@ -42,7 +46,7 @@ public class ActiveChats extends HttpServlet {
 		try {
 			username = (String)session.getAttribute("username");
 		} catch (NullPointerException e) {
-			System.out.println("No Session");
+			LOGGER.info("User session not found!");
 			out.println("false");
 			out.close();
 			return;
@@ -53,9 +57,6 @@ public class ActiveChats extends HttpServlet {
 		out.close();
 	}
 
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
-	 */
 	protected 
 	void doPost(HttpServletRequest request, HttpServletResponse response) 
 			throws ServletException, IOException 
@@ -63,6 +64,13 @@ public class ActiveChats extends HttpServlet {
 		doGet(request, response);
 	}
 
+	/**
+	 * To retreive active chats of the user
+	 * 
+	 * @param username
+	 * @return ArrayList<ChatInfo> 
+	 *					Array of active chats retreived from the database 
+	 */
 	protected
 	ArrayList<ChatInfo> getActiveChats (String username) {
 		Connection conn = null;
@@ -93,7 +101,9 @@ public class ActiveChats extends HttpServlet {
 				activeChats.add(new ChatInfo(res.getInt("chat_id"), receiver, res.getString("message_key")));
 			}
 		} catch (SQLException e) {
-			e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
+    	} catch (Exception e) {
+    		LOGGER.severe(e.getMessage());
 		} finally {
 			try { res.close(); } catch (Exception e) {}
 			try { stmt.close(); } catch (Exception e) {}

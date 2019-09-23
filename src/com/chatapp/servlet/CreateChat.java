@@ -1,6 +1,7 @@
 package com.chatapp.servlet;
 
 import java.util.Enumeration;
+import java.util.logging.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,7 +19,16 @@ import java.sql.Connection;
 
 import com.chatapp.util.DatabaseManager;
 
+/**
+ *  - Route: /create_chat
+ *	- POST
+ *		@param receiver User to create chat with
+ *		@param sender (FROM SESSION)
+ *		(String reply) true or false
+ */
 public class CreateChat extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+	private static Logger LOGGER = Logger.getLogger(CreateChat.class.getName());
 
 	public CreateChat () {
 		super();
@@ -44,7 +54,7 @@ public class CreateChat extends HttpServlet {
 		try {
 			sender = (String) session.getAttribute("username");
 		} catch (NullPointerException e) {
-			System.out.println("session not found!");
+			LOGGER.info("User session not found!");
 			out.println("false");
 			return;
 		}
@@ -67,10 +77,13 @@ public class CreateChat extends HttpServlet {
 	}
 
 	/**
-	*	- Check for SQL State: 23000 (Foreign key doesnt exist)
-	*	- Maybe instead of a boolean use something that can hold error data
-	*	  so that you can reply to the client accordingly
-	*/
+	 * Create chat between two users
+	 * 
+	 * @param sender User sending message to the Chat
+	 * @param receiver User to receive the message
+	 * @param message_key Key used to encrypt and decrypt chat messagaes on client side
+	 * @return isChatCreated
+	 */
 	protected
 	boolean createChat (String sender, String receiver, String message_key) {
 		System.out.println("Creating a chat");
@@ -95,7 +108,7 @@ public class CreateChat extends HttpServlet {
 			stmt.executeUpdate();
 			isChatCreated = true;
 		} catch (SQLException e) {
-    		e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
 		} finally {
     		try { stmt.close(); } catch (Exception e) {}
     		try { conn.close(); } catch (Exception e) {}
@@ -105,10 +118,12 @@ public class CreateChat extends HttpServlet {
 	}
 
 	/**
-	* TODO:
-	*	- Check for SQLErrors and accordingly set the value of doesChatExist
-	*	- When an error occurs let the user know
-	*/
+	 * Check if the chat already exists between the users
+	 * 
+	 * @param sender User sending message to the Chat
+	 * @param receiver User to receive the message
+	 * @return doesChatExist
+	 */
 	protected
 	boolean doesChatExist (String sender, String receiver) {
 		Connection conn = null;
@@ -130,7 +145,7 @@ public class CreateChat extends HttpServlet {
 				doesChatExist = true;
 			}
 		} catch (SQLException e) {
-    		e.printStackTrace();
+    		LOGGER.severe(e.getMessage());
 		} finally {
     		try { stmt.close(); } catch (Exception e) {}
     		try { conn.close(); } catch (Exception e) {}
@@ -143,6 +158,12 @@ public class CreateChat extends HttpServlet {
 	protected static 
 	final String ALPHA_NUMERIC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	
+	/**
+	 * Get random string
+	 * 
+	 * @param count Number of random characters to be added to the string
+	 * @return Random String
+	 */
 	protected 
 	static String randomKey(int count) {
 		StringBuilder builder = new StringBuilder();

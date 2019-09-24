@@ -18,10 +18,11 @@ const ChatView = {
 		base: (username) => `
 			<div id="top-bar" class="horizontal full">
 				<input type="button" value="Go Back" id="go_back">
+				${(ChatView.data.isGroup)?`<div id="group_users_btn">Users</div>`:``}
 				<div id="refresh_btn">Refresh</div>
 			</div>
 			<div id="app-body">
-				<div id="receiver-user">${username}</div>
+				<!--<div id="receiver-user">${username}</div>-->
 				<chat-messages>
 				</chat-messages>
 				<div class="horizontal full">
@@ -30,13 +31,13 @@ const ChatView = {
 				</div>
 			</div>
 		`,
-		message: (msg_data) => `
-			<message-bubble ${(!msg_data.receiver)?'class="flip"':''}>
+		message: (msg_data, display_name) => `
+			<message-bubble ${(msg_data.isSessionUser)?'class="flip"':''}>
+				${(display_name)?`<span class="username">${(!msg_data.isSessionUser)?msg_data.sender:"You"}</span>`:""}
 				<!--<div class="vertical msg-info">
-					<span class="username">${(msg_data.receiver)?ChatView.data.receiver:"You"}</span>
 					<span class="time">${msg_data.time}</span>
 				</div>-->
-				<div class="message" id="msg_${msg_data.msg_id}">
+				<div class="message ${(display_name)?`first-bubble`:``}" id="msg_${msg_data.msg_id}">
 					${msg_data.msg}
 				</div>
 			</message-bubble>
@@ -44,27 +45,35 @@ const ChatView = {
 		show_more: `<show-more>Show more</show-more>`
 	},
 
-	show: function (chat_id, receiver_username, msg_key) { 
+	show: function (chat_id, chat_name, msg_key, isGroup) {
 		this.data = {
 			// chatMessage Format: {(receiver: true,)msg_id:"", time: "", msg:""}
 			chatMessages: [],
-			receiver: receiver_username,
+			receiver: chat_name,
 			chat_id: chat_id,
 			old_msg_id: -1,
 			new_msg_id: -1,
 			msg_key: msg_key,
 			more: false,
-			avoidScroll: false
+			isGroup: isGroup,
+			avoidScroll: false,
+			temp_string: ""
 		}
 
 		$('chat-app').style.width = "600px";
-		$('chat-app').innerHTML = this.html.base(receiver_username);
+		$('chat-app').innerHTML = this.html.base(chat_name);
 
 		$('#go_back').addEventListener('click', () => DashboardView.show())
 		$('#send_msg').addEventListener('click', this.sendMessage);
+		
 		$('#refresh_btn').addEventListener('click', () => 
 				this.getMessages(MessageType.NEW, this.data.new_msg_id)
 		);
+		
+		if (isGroup)
+			$('#group_users_btn').addEventListener('click', () => {
+				PopUp.show(this.data.chat_id);
+			});
 		
 		this.getMessages(MessageType.CURRENT);
 		this.render();
@@ -77,6 +86,8 @@ const ChatView = {
 
 		if (msg_id) 
 			api += `&msg_id=${msg_id}`
+
+		this.data.temp_string = ""
 		
 		$xhrRequest(api,
 			(res) => {
@@ -106,8 +117,8 @@ const ChatView = {
 							time: json.time
 						}
 
-					if (ChatView.data.receiver == json.sender)
-						chatMessage["receiver"] = true;
+					chatMessage["isSessionUser"] = (json.sender == $("#session-user").innerHTML)
+					chatMessage["sender"] = json.sender;
 
 					if (type == MessageType.CURRENT || type == MessageType.OLD) {
 						ChatView.data.chatMessages.unshift(chatMessage);
@@ -140,18 +151,9 @@ const ChatView = {
 				$('#message').value = "";
 				res = res.trim();
 				res = JSON.parse(res);
+
 				if (res.reply == true) {
-					let json = 
-						{
-							msg: Decrypt(res.message, ChatView.data.msg_key),
-							time: res.time
-						};
-					let msgHTML = ChatView.html.message(json);
-					$('chat-messages').innerHTML += msgHTML;
-					
-					setTimeout(function () {
-						$('chat-messages').scrollTop = $('chat-messages').scrollHeight;
-					}, 200)
+				    ChatView.getMessages(MessageType.NEW, ChatView.data.new_msg_id);
 				}
 			}
 		)
@@ -169,8 +171,10 @@ const ChatView = {
 			}, 200)
 		}
 		
-		for (let message of this.data.chatMessages)
-			$('chat-messages').innerHTML += this.html.message(message);
+		for (let message of this.data.chatMessages) {
+			$('chat-messages').innerHTML += this.html.message(message, (ChatView.data.temp_string != message.sender));
+			ChatView.data.temp_string = message.sender;
+		}
 		
 		if (this.data.scroll)
 			$('chat-messages').scrollTop = $('chat-messages').scrollHeight;

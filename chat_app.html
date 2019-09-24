@@ -10,12 +10,22 @@
 		$xhrRequest('/ChatApp/session', (res) => {
 			if (res.trim() == "false") 
 				window.location.replace("/ChatApp/login.html");
+			//document.onload = function () {
+			$("#session-user").innerHTML = res.trim();
+			//}
 		})
 	</script>
 </head>
 <body>
+	<pop-up-container>
+		<div id="close-popup" class="link-btn white">Close</div>
+		<pop-up></pop-up>
+	</pop-up-container>
+	<span id="session-user"></span>
+	<div class="link-btn" style="margin-bottom:20px" onclick="location.href='/ChatApp/logout'">Logout</div>
 	<chat-app>
 	</chat-app>
+	<script type="text/javascript" src="js/views/popup.js"></script>
 	<script type="text/javascript" src="js/views/dashboard.js"></script>
 	<script type="text/javascript" src="js/views/chat.js"></script>
 	<script type="text/javascript" src="js/chat_app.js"></script>

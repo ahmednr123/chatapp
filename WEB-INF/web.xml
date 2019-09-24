@@ -51,6 +51,10 @@
         <servlet-name>RemoveUser</servlet-name>
         <servlet-class>com.chatapp.servlet.RemoveUser</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>GetUsers</servlet-name>
+        <servlet-class>com.chatapp.servlet.GetUsers</servlet-class>
+    </servlet>
 
     <!-- Servlet Mappings -->
     <servlet-mapping>
@@ -92,6 +96,10 @@
     <servlet-mapping>
         <servlet-name>RemoveUser</servlet-name>
         <url-pattern>/remove_user</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>GetUsers</servlet-name>
+        <url-pattern>/get_users</url-pattern>
     </servlet-mapping>
     
     <listener>

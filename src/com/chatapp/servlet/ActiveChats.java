@@ -84,8 +84,9 @@ public class ActiveChats extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("SELECT chat_users.chat_id, chat_users.username, chat_manager.message_key from chat_users INNER JOIN chat_manager ON chat_manager.id = chat_users.chat_id WHERE chat_id NOT IN (SELECT chat_id FROM chat_groups) AND username!=?");
+			stmt = conn.prepareStatement("SELECT chat_users.chat_id, chat_users.username, chat_manager.message_key from chat_users INNER JOIN chat_manager ON chat_manager.id = chat_users.chat_id WHERE chat_id IN (SELECT chat_id from chat_users WHERE chat_id NOT IN (SELECT chat_id FROM chat_groups) AND username=?) AND username!=?");
 			stmt.setString(1, username);
+			stmt.setString(2, username);
 
 			res = stmt.executeQuery();
 			while (res.next()) {

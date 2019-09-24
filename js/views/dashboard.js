@@ -66,6 +66,7 @@ const DashboardView = {
 			} else if (res == "err") {
 				alert("User not found");
 			}
+			$('#username').value = "";
 		})
 	},
 
@@ -91,15 +92,23 @@ const DashboardView = {
 			    if (json.group_name == "")
 				    $('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username, json.message_key);
                 else
-                    $('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.group_name + "<span style='color: lightgray;font-weight: 400;'> [Group]</span>", json.message_key);
+                    $('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.group_name + "<group-chat style='color: lightgray;font-weight: 400;'> [Group]</group-chat>", json.message_key);
             }
-			/*$forEach('chat-user', (el) => {
+
+			$forEach('chat-user', (el) => {
 				el.addEventListener('click', function () {
 					console.log(`chat_id: ${el.getAttribute("chat_id")}, username: ${el.innerHTML}, 
 									msg_key:${el.getAttribute("msg_key")}`);
-					ChatView.show(el.getAttribute("chat_id"), el.innerHTML, el.getAttribute("msg_key"));
+
+					let group_el = el.getElementsByTagName("group-chat")[0];
+					if (group_el) {
+					    group_el.parentNode.removeChild(group_el);
+                        ChatView.show(el.getAttribute("chat_id"), el.innerHTML, el.getAttribute("msg_key"), true);
+					} else {
+					    ChatView.show(el.getAttribute("chat_id"), el.innerHTML, el.getAttribute("msg_key"));
+					}
 				})
-			})*/
+			})
 
 			$('#app-body').appendChild(this.html.info_text("Click on a user to chat", true));
 		}

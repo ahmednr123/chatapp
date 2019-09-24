@@ -49,7 +49,6 @@ public class GetMessages extends HttpServlet {
 		PrintWriter out = response.getWriter();
 
 		HttpSession session = request.getSession(false);
-		String username = null;
 
 		int chat_id, type, msg_id;
 
@@ -58,14 +57,14 @@ public class GetMessages extends HttpServlet {
 		try {
 			chat_id = Integer.parseInt(request.getParameter("chat_id"));
 			type = Integer.parseInt(request.getParameter("type"));
-			username = (String)session.getAttribute("username");
+			session.getAttribute("username");
 		} catch (NullPointerException e) {
 			out.println("false");
 			out.close();
 			return;
 		}
 
-		ArrayList<ChatMessage> chatMessages;
+		ArrayList<ChatMessage> chatMessages = getChatMessages(type, chat_id);
 
 		// msg_id (Optional Parameter)
 		// Check if msg_id is passed and accordingly execute
@@ -108,13 +107,13 @@ public class GetMessages extends HttpServlet {
 	 *
 	 * Three types of messages can be retreived from the database:
 	 *		MESSAGE_TYPE_NEW
-	 *			retreives atmost 10 messages from the database 
+	 *			retrieves atmost 10 messages from the database
 	 *			(messages after the given msg_id)
 	 *		MESSAGE_TYPE_OLD
-	 *			retreives atmost 10 messages from the database
+	 *			retrieves atmost 10 messages from the database
 	 *			(messages before the given msg_id)
 	 *		MESSAGE_TYPE_CURRENT
-	 *			retreives atmost 10 latest messages from the database
+	 *			retrieves atmost 10 latest messages from the database
 	 * 
 	 * @param type Type of the messages needed to fetch from the database
 	 * @param chat_id Unique Chat ID corresponding to individual user chats

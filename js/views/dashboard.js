@@ -1,3 +1,8 @@
+const ChatType = {
+	USER: 0,
+	GROUP: 1
+}
+
 const DashboardView = {
 	data: {
 		chats: []
@@ -6,8 +11,12 @@ const DashboardView = {
 	html: {
 		base: () => `
 			<div id="top-bar" class="horizontal full">
+				<input type="text" id="group_name" placeholder="Group name" style="width: 100%;margin-right: 10px">
+				<input type="button" value="Create Group Chat" id="create_group_chat">
+			</div>
+			<div id="top-bar" class="horizontal full">
 				<input type="text" id="username" placeholder="Username" style="width: 100%;margin-right: 10px">
-				<input type="button" value="Add User" id="create_chat">
+				<input type="button" value="Create User Chat" id="create_user_chat">
 			</div>
 			<div id="app-body">
 			</div>
@@ -28,13 +37,27 @@ const DashboardView = {
 	show: function () {
 		$('chat-app').style.width = "400px"
 		$('chat-app').innerHTML = this.html.base();
-		$('#create_chat').addEventListener('click', this.createChat);
+		$('#create_user_chat').addEventListener('click', this.createUserChat);
+		$('#create_group_chat').addEventListener('click', this.createGroupChat);
 		this.updateChats();
 		this.render();
 	},
 
-	createChat: function () {
-		$xhrPost('/ChatApp/create_chat', {receiver:$('#username').value}, (res, _xhr) => {
+	createGroupChat: function () {
+		$xhrPost('/ChatApp/create_chat', {type: ChatType.GROUP, group_name:$('#group_name').value}, (res, _xhr) => {
+			res = res.trim();
+			if (res == "true") {
+				DashboardView.updateChats(_xhr);
+			} else if (res == "false") {
+				alert("The chat with the user already exists");
+			} else if (res == "err") {
+				alert("User not found");
+			}
+		})
+	},
+
+	createUserChat: function () {
+		$xhrPost('/ChatApp/create_chat', {type: ChatType.USER, receiver:$('#username').value}, (res, _xhr) => {
 			res = res.trim();
 			if (res == "true") {
 				DashboardView.updateChats(_xhr);

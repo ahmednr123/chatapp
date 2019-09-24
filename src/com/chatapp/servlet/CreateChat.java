@@ -22,8 +22,8 @@ import com.chatapp.util.DatabaseManager;
 /**
  *  - Route: /create_chat
  *	- POST
- *		@param receiver User to create chat with
- *		@param sender (FROM SESSION)
+ *		[receiver] User to create chat with
+ *		[sender] (FROM SESSION)
  *		(String reply) true or false
  */
 public class CreateChat extends HttpServlet {
@@ -104,12 +104,18 @@ public class CreateChat extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
+			stmt = conn.prepareStatement("INSERT INTO chat_manager (message_key) VALUES (?)");
+			stmt.setString(1, message_key);
+			stmt.executeUpdate();
+			//stmt.get
+
+			stmt = conn.prepareStatement("INSERT INTO chat_manager (chat_id, user) VALUES (?,?,?)");
+			stmt.setString(1, receiver);
+
+
 			stmt = conn.prepareStatement("INSERT INTO chat_manager (user_one, user_two, message_key) VALUES (?,?,?)");
 			stmt.setString(1, sender);
-			stmt.setString(2, receiver);
-			stmt.setString(3, message_key);
-			
-			stmt.executeUpdate();
+
 			isChatCreated = true;
 		} catch (SQLException e) {
     		LOGGER.severe(e.getMessage());

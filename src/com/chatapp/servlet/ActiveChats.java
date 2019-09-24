@@ -22,7 +22,7 @@ import com.chatapp.util.DatabaseManager;
 /**
  *  - Route: /active_chats
  *	- GET
- *		@param username (FROM SESSION)
+ *		[username] (FROM SESSION)
  *		(json reply) Array of Active Chats Info
  *		(onFail reply) false
  */
@@ -81,13 +81,12 @@ public class ActiveChats extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("SELECT * FROM chat_manager WHERE user_one=? OR user_two=?");
+			stmt = conn.prepareStatement("SELECT cu.chat_id as chat_id, cu.username as username, cm.message_key as message_key FROM chat_users cu,chat_manager cm WHERE username!=? AND cm.chat_id==cu.chat_id");//"SELECT * FROM chat_users WHERE username!=? AND chat_id IN (SELECT chat_id FROM chat_users WHERE username=? AND chat_id NOT IN (SELECT chat_id FROM group_chats)) AND chat_manager.chat_id == chat_users.chat_id");
 			stmt.setString(1, username);
-			stmt.setString(2, username);
 
 			res = stmt.executeQuery();
 			while (res.next()) {
-				String receiver = null;
+				/*String receiver = null;
 
 				// Pre set the receiver value to "user_one"
 				String user_one = receiver = res.getString("user_one");
@@ -96,9 +95,9 @@ public class ActiveChats extends HttpServlet {
 				// Change receiver value if "user_one" is the session user
 				if (user_one.equals(username)) {
 					receiver = user_two;
-				}
+				}*/
 
-				activeChats.add(new ChatInfo(res.getInt("chat_id"), receiver, res.getString("message_key")));
+				activeChats.add(new ChatInfo(res.getInt("chat_id"), res.getString("username"), res.getString("message_key")));
 			}
 		} catch (SQLException e) {
     		LOGGER.severe(e.getMessage());
@@ -118,9 +117,10 @@ class ChatInfo {
 	private int chat_id;
 	private String username;
 	private String message_key;
+	private String group_name;
 
 	public 
-	ChatInfo (int chat_id, String username, String message_key) {
+	ChatInfo (int chat_id, String username, String message_key, String group_name) {
 		if (username == null || message_key == null) {
 			throw new NullPointerException();
 		}
@@ -128,12 +128,19 @@ class ChatInfo {
 		this.chat_id = chat_id;
 		this.username = username;
 		this.message_key = message_key;
+		this.group_name = group_name;
+	}
+
+	public
+	ChatInfo (int chat_id, String username, String message_key) {
+		//ChatInfo(chat_id, username, message_key, "");
 	}
 
 	public String toJsonString () {
 		return "{\"chat_id\":" + chat_id + 
 				", \"username\":\"" + username + 
-				"\", \"message_key\":\"" + message_key + "\"}";
+				"\", \"message_key\":\"" + message_key + 
+				"\", \"group_name\": \"" + group_name + "\"}";
 	}
 
 	public static String getJsonStringArray (ArrayList<ChatInfo> chats) {

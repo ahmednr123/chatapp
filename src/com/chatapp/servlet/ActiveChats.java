@@ -53,6 +53,9 @@ public class ActiveChats extends HttpServlet {
 		}
 
 		ArrayList<ChatInfo> activeChats = getActiveChats(username);
+		ArrayList<ChatInfo> activeGroups = getActiveGroups(username);
+		activeChats.addAll(activeGroups);
+
 		out.println(ChatInfo.getJsonStringArray(activeChats));
 		out.close();
 	}
@@ -81,22 +84,11 @@ public class ActiveChats extends HttpServlet {
 
 		try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("SELECT cu.chat_id as chat_id, cu.username as username, cm.message_key as message_key FROM chat_users cu,chat_manager cm WHERE username!=? AND cm.chat_id==cu.chat_id");//"SELECT * FROM chat_users WHERE username!=? AND chat_id IN (SELECT chat_id FROM chat_users WHERE username=? AND chat_id NOT IN (SELECT chat_id FROM group_chats)) AND chat_manager.chat_id == chat_users.chat_id");
+			stmt = conn.prepareStatement("SELECT chat_users.chat_id, chat_users.username, chat_manager.message_key from chat_users INNER JOIN chat_manager ON chat_manager.id = chat_users.chat_id WHERE chat_id NOT IN (SELECT chat_id FROM chat_groups) AND username!=?");
 			stmt.setString(1, username);
 
 			res = stmt.executeQuery();
 			while (res.next()) {
-				/*String receiver = null;
-
-				// Pre set the receiver value to "user_one"
-				String user_one = receiver = res.getString("user_one");
-				String user_two = res.getString("user_two");
-				
-				// Change receiver value if "user_one" is the session user
-				if (user_one.equals(username)) {
-					receiver = user_two;
-				}*/
-
 				activeChats.add(new ChatInfo(res.getInt("chat_id"), res.getString("username"), res.getString("message_key")));
 			}
 		} catch (SQLException e) {
@@ -111,6 +103,50 @@ public class ActiveChats extends HttpServlet {
 
 		return activeChats;
 	}
+	/**
+	 * To retreive active chats of the user
+	 *
+	 * @param username
+	 * @return ArrayList<ChatInfo>
+	 *					Array of active chats retreived from the database
+	 */
+	protected
+	ArrayList<ChatInfo> getActiveGroups (String username) {
+		Connection conn = null;
+		PreparedStatement stmt = null;
+		ResultSet res = null;
+
+		ArrayList<ChatInfo> activeGroups = new ArrayList<ChatInfo>();
+
+		try {
+			conn = DatabaseManager.getConnection();
+			stmt = conn.prepareStatement("SELECT chat_groups.chat_id, chat_groups.name, chat_manager.message_key from chat_groups INNER JOIN chat_manager ON chat_manager.id = chat_groups.chat_id INNER JOIN chat_users ON chat_users.chat_id = chat_groups.chat_id WHERE chat_users.username=?");
+			stmt.setString(1, username);
+
+			res = stmt.executeQuery();
+			while (res.next()) {
+				activeGroups.add(
+						new ChatInfo (
+							res.getInt("chat_id"),
+							"",
+							res.getString("message_key"),
+							res.getString("name")
+						)
+				);
+			}
+		} catch (SQLException e) {
+			LOGGER.severe(e.getMessage());
+		} catch (Exception e) {
+			LOGGER.severe(e.getMessage());
+		} finally {
+			try { res.close(); } catch (Exception e) {}
+			try { stmt.close(); } catch (Exception e) {}
+			try { conn.close(); } catch (Exception e) {}
+		}
+
+		return activeGroups;
+	}
+
 }
 
 class ChatInfo {
@@ -133,7 +169,7 @@ class ChatInfo {
 
 	public
 	ChatInfo (int chat_id, String username, String message_key) {
-		//ChatInfo(chat_id, username, message_key, "");
+		this(chat_id, username, message_key, "");
 	}
 
 	public String toJsonString () {

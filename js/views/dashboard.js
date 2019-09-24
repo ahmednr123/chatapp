@@ -87,16 +87,19 @@ const DashboardView = {
 		} 
 		else 
 		{
-			for (let json of this.data.chats)
-				$('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username, json.message_key);
-
-			$forEach('chat-user', (el) => {
+			for (let json of this.data.chats){
+			    if (json.group_name == "")
+				    $('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.username, json.message_key);
+                else
+                    $('#app-body').innerHTML += this.html.add_chat(json.chat_id, json.group_name + "<span style='color: lightgray;font-weight: 400;'> [Group]</span>", json.message_key);
+            }
+			/*$forEach('chat-user', (el) => {
 				el.addEventListener('click', function () {
 					console.log(`chat_id: ${el.getAttribute("chat_id")}, username: ${el.innerHTML}, 
 									msg_key:${el.getAttribute("msg_key")}`);
 					ChatView.show(el.getAttribute("chat_id"), el.innerHTML, el.getAttribute("msg_key"));
 				})
-			})
+			})*/
 
 			$('#app-body').appendChild(this.html.info_text("Click on a user to chat", true));
 		}

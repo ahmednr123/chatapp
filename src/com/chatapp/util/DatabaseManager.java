@@ -20,7 +20,7 @@ public class DatabaseManager {
 	private static Logger LOGGER = Logger.getLogger(DatabaseManager.class.getName());
 	
 	private static final String JDBC_DRIVER = "com.mysql.cj.jdbc.Driver";  
-	private static final String DB_URL = "jdbc:mysql://localhost/login_app";
+	private static final String DB_URL = "jdbc:mysql://localhost/chat_app";
     
     //  Database credentials
 	private static final String DB_USER = "root";

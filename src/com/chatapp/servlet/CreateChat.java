@@ -1,6 +1,6 @@
 package com.chatapp.servlet;
 
-import java.util.Enumeration;
+import java.sql.*;
 import java.util.logging.Logger;
 
 import java.io.IOException;
@@ -12,18 +12,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Connection;
-
 import com.chatapp.util.DatabaseManager;
 
 /**
  *  - Route: /create_chat
  *	- POST
- *		@param receiver User to create chat with
- *		@param sender (FROM SESSION)
+ *		[receiver] User to create chat with
+ *		[sender] (FROM SESSION)
  *		(String reply) true or false
  */
 public class CreateChat extends HttpServlet {
@@ -49,7 +44,8 @@ public class CreateChat extends HttpServlet {
             throws ServletException, IOException
     {
         PrintWriter out = response.getWriter();
-        String sender, type;
+        String sender;
+        int type;
 
         HttpSession session = request.getSession(false);
 
@@ -65,12 +61,12 @@ public class CreateChat extends HttpServlet {
         String message_key = randomKey(20);
         boolean isChatCreated = false;
         switch (type) {
-            USER_CHAT:
+            case USER_CHAT:
             String receiver = request.getParameter("receiver");
 
             // Check if appropriate parameters are passed with the request
             // and also check if the sender is not creating a chat with himself
-            if (receiver == null || (sender == receiver)) {
+            if (receiver == null || (sender.equals(receiver))) {
                 out.println("false");
                 return;
             }
@@ -79,7 +75,8 @@ public class CreateChat extends HttpServlet {
 
             isChatCreated = createUserChat(sender, receiver, message_key);
             break;
-            GROUP_CHAT:
+
+            case GROUP_CHAT:
             String group_name = request.getParameter("group_name");
 
             // Check if appropriate parameters are passed with the request
@@ -91,7 +88,8 @@ public class CreateChat extends HttpServlet {
             LOGGER.info("Creating group chat \n[Owner]: " + sender + ", [Group Name]: " + group_name);
 
             isChatCreated = createGroupChat(
-                    new ArrayList<String>(Array.asList(new String[]{sender})),
+                    group_name,
+                    new String[] {sender},
                     message_key
             );
             break;
@@ -132,7 +130,7 @@ public class CreateChat extends HttpServlet {
         try {
             conn = DatabaseManager.getConnection();
 
-            stmt = conn.prepareStatement("INSERT INTO chat_manager (message_key) VALUES (?)");
+            stmt = conn.prepareStatement("INSERT INTO chat_manager (message_key) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setString(1, message_key);
             stmt.executeUpdate();
 
@@ -165,7 +163,7 @@ public class CreateChat extends HttpServlet {
     }
 
     protected
-    boolean createGroupChat (String group_name, ArrayList<String> users, String message_key) {
+    boolean createGroupChat (String group_name, String[] users, String message_key) {
         LOGGER.info("Creating a group chat");
 
         Connection conn = null;
@@ -177,7 +175,7 @@ public class CreateChat extends HttpServlet {
         try {
             conn = DatabaseManager.getConnection();
 
-            stmt = conn.prepareStatement("INSERT INTO chat_manager (message_key) VALUES (?)");
+            stmt = conn.prepareStatement("INSERT INTO chat_manager (message_key) VALUES (?)", Statement.RETURN_GENERATED_KEYS);
             stmt.setString(1, message_key);
             stmt.executeUpdate();
 

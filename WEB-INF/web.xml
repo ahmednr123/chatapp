@@ -43,6 +43,14 @@
         <servlet-name>GetMessages</servlet-name>
         <servlet-class>com.chatapp.servlet.GetMessages</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>AddUser</servlet-name>
+        <servlet-class>com.chatapp.servlet.AddUser</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>RemoveUser</servlet-name>
+        <servlet-class>com.chatapp.servlet.RemoveUser</servlet-class>
+    </servlet>
 
     <!-- Servlet Mappings -->
     <servlet-mapping>
@@ -76,6 +84,14 @@
     <servlet-mapping>
         <servlet-name>GetMessages</servlet-name>
         <url-pattern>/messages</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>AddUser</servlet-name>
+        <url-pattern>/add_user</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>RemoveUser</servlet-name>
+        <url-pattern>/remove_user</url-pattern>
     </servlet-mapping>
     
     <listener>

@@ -56,8 +56,8 @@ public class DatabaseManager {
 	 * @exception SQLException
 	 *					If a database access error occurs
 	 */
-	public static 
-	synchronized Connection getConnection()
+	public static
+	Connection getConnection()
 		throws SQLException 
 	{
 		LOGGER.info("DBConnection Request");

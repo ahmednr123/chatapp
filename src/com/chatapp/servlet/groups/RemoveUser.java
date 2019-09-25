@@ -1,6 +1,8 @@
-package com.chatapp.servlet;
+package com.chatapp.servlet.groups;
 
+import com.chatapp.servlet.groups.AddUser;
 import com.chatapp.util.DatabaseManager;
+import com.chatapp.util.DatabaseQuery;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -11,15 +13,22 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class AddUser extends HttpServlet {
+/**
+ *  - Route: /remove_user
+ *	- POST
+ *      [chat_id] Group chat id
+ *		[username] User to be removed
+ *		[session_user] (FROM SESSION) to verify session_users privilege
+ *		(String reply) true or false
+ */
+public class RemoveUser extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static Logger LOGGER = Logger.getLogger(AddUser.class.getName());
 
-    public AddUser() {
+    public RemoveUser () {
         super();
     }
 
@@ -56,16 +65,16 @@ public class AddUser extends HttpServlet {
             return;
         }
 
-        if ( !isUserAuthorized(session_user, chat_id) ) {
+        if ( !DatabaseQuery.isUserAuthorized(session_user, chat_id) ) {
             LOGGER.info("User: " + session_user + " accessed an unauthorized group");
             out.print("false");
             out.close();
             return;
         }
 
-        boolean isUserAdded = addUser(chat_id, username);
+        boolean isUserRemoved = removeUser(chat_id, username);
 
-        if (!isUserAdded) {
+        if (!isUserRemoved) {
             out.print("err");
             return;
         }
@@ -75,66 +84,33 @@ public class AddUser extends HttpServlet {
     }
 
     /**
-     * Add user to the group
+     * Remove a user from the group
      *
      * @param chat_id
      * @param username
      * @return
      */
     private
-    boolean addUser (int chat_id, String username) {
-        boolean isUserAdded = false;
+    boolean removeUser (int chat_id, String username) {
+        boolean isUserRemoved = false;
         Connection conn = null;
         PreparedStatement stmt = null;
 
         try {
             conn = DatabaseManager.getConnection();
-            stmt = conn.prepareStatement("INSERT INTO chat_users (chat_id, username) VALUES (?,?)");
+            stmt = conn.prepareStatement("DELETE FROM chat_users WHERE chat_id=? AND username=?");
             stmt.setInt(1, chat_id);
             stmt.setString(2, username);
-
             stmt.executeUpdate();
-            isUserAdded = true;
+
+            stmt = conn.prepareStatement("DELETE FROM chat_manager WHERE id NOT IN (SELECT chat_id FROM chat_users)");
+            stmt.executeUpdate();
+
+            isUserRemoved = true;
         } catch (SQLException e) {
             LOGGER.severe(e.getMessage());
         }
 
-        return isUserAdded;
-    }
-
-    /**
-     * Check is the user is authorized to add users to the group
-     *
-     * @param username
-     * @param chat_id
-     * @return
-     */
-    private
-    boolean isUserAuthorized (String username, int chat_id) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        boolean isUserAuthorized = false;
-
-        try {
-            conn = DatabaseManager.getConnection();
-            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
-            stmt.setInt(1, chat_id);
-            stmt.setString(2, username);
-
-            rs = stmt.executeQuery();
-            if (rs.next()) {
-                isUserAuthorized = true;
-            }
-        } catch (SQLException e) {
-            LOGGER.severe(e.getMessage());
-        } finally {
-            try { rs.close(); } catch (Exception e) {}
-            try { stmt.close(); } catch (Exception e) {}
-            try { conn.close(); } catch (Exception e) {}
-        }
-
-        return isUserAuthorized;
+        return isUserRemoved;
     }
 }

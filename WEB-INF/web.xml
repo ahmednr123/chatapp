@@ -45,15 +45,15 @@
     </servlet>
     <servlet>
         <servlet-name>AddUser</servlet-name>
-        <servlet-class>com.chatapp.servlet.AddUser</servlet-class>
+        <servlet-class>com.chatapp.servlet.groups.AddUser</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>RemoveUser</servlet-name>
-        <servlet-class>com.chatapp.servlet.RemoveUser</servlet-class>
+        <servlet-class>com.chatapp.servlet.groups.RemoveUser</servlet-class>
     </servlet>
     <servlet>
         <servlet-name>GetUsers</servlet-name>
-        <servlet-class>com.chatapp.servlet.GetUsers</servlet-class>
+        <servlet-class>com.chatapp.servlet.groups.GetUsers</servlet-class>
     </servlet>
 
     <!-- Servlet Mappings -->

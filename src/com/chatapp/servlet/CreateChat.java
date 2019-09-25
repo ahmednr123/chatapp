@@ -17,6 +17,7 @@ import com.chatapp.util.DatabaseManager;
 /**
  *  - Route: /create_chat
  *	- POST
+ *      [chat type]	GROUP or USER
  *		[receiver] User to create chat with
  *		[sender] (FROM SESSION)
  *		(String reply) true or false

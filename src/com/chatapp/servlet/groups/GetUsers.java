@@ -1,6 +1,7 @@
-package com.chatapp.servlet;
+package com.chatapp.servlet.groups;
 
 import com.chatapp.util.DatabaseManager;
+import com.chatapp.util.DatabaseQuery;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -16,6 +17,13 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+/**
+ *  - Route: /get_users
+ *	- GET
+ *      [chat_id] Group chat id
+ *		[session_user] (FROM SESSION) to verify session_users privilege
+ *		(JSON Array String) String of users
+ */
 public class GetUsers extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static Logger LOGGER = Logger.getLogger(GetUsers.class.getName());
@@ -43,7 +51,7 @@ public class GetUsers extends HttpServlet {
             return;
         }
 
-        if ( !isUserAuthorized(session_user, chat_id) ) {
+        if ( !DatabaseQuery.isUserAuthorized(session_user, chat_id) ) {
             LOGGER.info("User: " + session_user + " accessed an unauthorized group");
             out.print("false");
             out.close();
@@ -90,42 +98,6 @@ public class GetUsers extends HttpServlet {
         }
 
         return groupUsers;
-    }
-
-    /**
-     * Check is the user is authorized to get users data from the group
-     *
-     * @param username
-     * @param chat_id
-     * @return
-     */
-    private
-    boolean isUserAuthorized (String username, int chat_id) {
-        Connection conn = null;
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-
-        boolean isUserAuthorized = false;
-
-        try {
-            conn = DatabaseManager.getConnection();
-            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
-            stmt.setInt(1, chat_id);
-            stmt.setString(2, username);
-
-            rs = stmt.executeQuery();
-            if (rs.next()) {
-                isUserAuthorized = true;
-            }
-        } catch (SQLException e) {
-            LOGGER.severe(e.getMessage());
-        } finally {
-            try { rs.close(); } catch (Exception e) {}
-            try { stmt.close(); } catch (Exception e) {}
-            try { conn.close(); } catch (Exception e) {}
-        }
-
-        return isUserAuthorized;
     }
 
     private

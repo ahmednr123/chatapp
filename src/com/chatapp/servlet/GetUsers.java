@@ -34,7 +34,7 @@ public class GetUsers extends HttpServlet {
         int chat_id;
 
         try {
-            session.getAttribute("username");
+            session_user = (String) session.getAttribute("username");
             chat_id = Integer.parseInt(request.getParameter("chat_id"));
         } catch (NullPointerException e) {
             LOGGER.severe(e.getMessage());
@@ -43,9 +43,16 @@ public class GetUsers extends HttpServlet {
             return;
         }
 
+        if ( !isUserAuthorized(session_user, chat_id) ) {
+            LOGGER.info("User: " + session_user + " accessed an unauthorized group");
+            out.print("false");
+            out.close();
+            return;
+        }
+
         ArrayList<String> groupUsers = getUsers(chat_id);
 
-        out.print(toJsonStringArray(groupUsers));
+        out.print(jsonStringArray(groupUsers));
         out.close();
     }
 
@@ -56,7 +63,13 @@ public class GetUsers extends HttpServlet {
         doGet(request, response);
     }
 
-    protected
+    /**
+     * Get users that are members of the group
+     *
+     * @param chat_id
+     * @return
+     */
+    private
     ArrayList<String> getUsers (int chat_id) {
         ArrayList<String> groupUsers = new ArrayList<String>();
         Connection conn = null;
@@ -79,13 +92,44 @@ public class GetUsers extends HttpServlet {
         return groupUsers;
     }
 
-    protected
-    void checkAuthentication (String username, int chat_id) {
+    /**
+     * Check is the user is authorized to get users data from the group
+     *
+     * @param username
+     * @param chat_id
+     * @return
+     */
+    private
+    boolean isUserAuthorized (String username, int chat_id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
 
+        boolean isUserAuthorized = false;
+
+        try {
+            conn = DatabaseManager.getConnection();
+            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
+            stmt.setInt(1, chat_id);
+            stmt.setString(2, username);
+
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                isUserAuthorized = true;
+            }
+        } catch (SQLException e) {
+            LOGGER.severe(e.getMessage());
+        } finally {
+            try { rs.close(); } catch (Exception e) {}
+            try { stmt.close(); } catch (Exception e) {}
+            try { conn.close(); } catch (Exception e) {}
+        }
+
+        return isUserAuthorized;
     }
 
-    protected
-    String toJsonStringArray (ArrayList<String> array) {
+    private
+    String jsonStringArray (ArrayList<String> array) {
         String jsonArray = "[";
 
         if (array.size() > 0) {
@@ -93,8 +137,10 @@ public class GetUsers extends HttpServlet {
                 jsonArray += "\"" + element + "\",";
             }
 
-            jsonArray = jsonArray.substring(0, jsonArray.length() - 1) + "]";
+            jsonArray = jsonArray.substring(0, jsonArray.length() - 1);
         }
+
+        jsonArray = jsonArray + "]";
 
         return jsonArray;
     }

@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
@@ -36,11 +37,13 @@ public class RemoveUser extends HttpServlet {
         PrintWriter out = response.getWriter();
         HttpSession session = request.getSession();
         String username = request.getParameter("username");
+
+        String session_user;
         int chat_id;
 
         try {
             chat_id = Integer.parseInt(request.getParameter("chat_id"));
-            session.getAttribute("username");
+            session_user = (String) session.getAttribute("username");
         } catch (NullPointerException e) {
             LOGGER.severe(e.getMessage());
             out.print("false");
@@ -50,6 +53,13 @@ public class RemoveUser extends HttpServlet {
 
         if (username == null) {
             out.print("false");
+            return;
+        }
+
+        if ( !isUserAuthorized(session_user, chat_id) ) {
+            LOGGER.info("User: " + session_user + " accessed an unauthorized group");
+            out.print("false");
+            out.close();
             return;
         }
 
@@ -64,7 +74,14 @@ public class RemoveUser extends HttpServlet {
         out.close();
     }
 
-    protected
+    /**
+     * Remove a user from the group
+     *
+     * @param chat_id
+     * @param username
+     * @return
+     */
+    private
     boolean removeUser (int chat_id, String username) {
         boolean isUserRemoved = false;
         Connection conn = null;
@@ -86,5 +103,41 @@ public class RemoveUser extends HttpServlet {
         }
 
         return isUserRemoved;
+    }
+
+    /**
+     * Check is the user is authorized to remove users to the group
+     *
+     * @param username
+     * @param chat_id
+     * @return
+     */
+    private
+    boolean isUserAuthorized (String username, int chat_id) {
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        ResultSet rs = null;
+
+        boolean isUserAuthorized = false;
+
+        try {
+            conn = DatabaseManager.getConnection();
+            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
+            stmt.setInt(1, chat_id);
+            stmt.setString(2, username);
+
+            rs = stmt.executeQuery();
+            if (rs.next()) {
+                isUserAuthorized = true;
+            }
+        } catch (SQLException e) {
+            LOGGER.severe(e.getMessage());
+        } finally {
+            try { rs.close(); } catch (Exception e) {}
+            try { stmt.close(); } catch (Exception e) {}
+            try { conn.close(); } catch (Exception e) {}
+        }
+
+        return isUserAuthorized;
     }
 }

@@ -76,7 +76,8 @@ const PopUp = {
     	setTimeout(function () {
     		$forEach('#group-user-container .group-user .remove-user', (el) => {
     			el.addEventListener('click', () => {
-    				$xhrRequest('/ChatApp/remove_user', {chat_id:PopUp.data.chat_id, username:el.getAttribute('username')}, (res) => {
+    				$xhrPost('/ChatApp/remove_user', {chat_id:PopUp.data.chat_id, username:el.getAttribute('username')}, 
+                        (res) => {
     					if (res.trim() == "true") {
     						alert("User removed");
     					} else {

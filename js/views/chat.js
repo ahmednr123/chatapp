@@ -3,16 +3,7 @@ const MessageType = {
 }
 
 const ChatView = {
-	data: {
-		// chatMessage Format: {(receiver: true,)msg_id:"", time: "", msg:""}
-		chatMessages: [],
-		receiver: "",
-		chat_id: -1,
-		old_msg_id: -1,
-		new_msg_id: -1,
-		msg_key:"",
-		more: false
-	},
+	data: null,
 
 	html: {
 		base: (username) => `

@@ -25,8 +25,8 @@ public class CreateChat extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static Logger LOGGER = Logger.getLogger(CreateChat.class.getName());
 
-    public static final int USER_CHAT = 0;
-    public static final int GROUP_CHAT = 1;
+    private static final int USER_CHAT = 0;
+    private static final int GROUP_CHAT = 1;
 
     public CreateChat () {
         super();
@@ -62,37 +62,37 @@ public class CreateChat extends HttpServlet {
         boolean isChatCreated = false;
         switch (type) {
             case USER_CHAT:
-            String receiver = request.getParameter("receiver");
+                String receiver = request.getParameter("receiver");
 
-            // Check if appropriate parameters are passed with the request
-            // and also check if the sender is not creating a chat with himself
-            if (receiver == null || (sender.equals(receiver))) {
-                out.println("false");
-                return;
-            }
+                // Check if appropriate parameters are passed with the request
+                // and also check if the sender is not creating a chat with himself
+                if (receiver == null || (sender.equals(receiver))) {
+                    out.println("false");
+                    return;
+                }
 
-            LOGGER.info("Creating chat between \n[User]: " + sender + " and [User]: " + receiver);
+                LOGGER.info("Creating chat between \n[User]: " + sender + " and [User]: " + receiver);
 
-            isChatCreated = createUserChat(sender, receiver, message_key);
-            break;
+                isChatCreated = createUserChat(sender, receiver, message_key);
+                break;
 
             case GROUP_CHAT:
-            String group_name = request.getParameter("group_name");
+                String group_name = request.getParameter("group_name");
 
-            // Check if appropriate parameters are passed with the request
-            if (group_name == null) {
-                out.println("false");
-                return;
-            }
+                // Check if appropriate parameters are passed with the request
+                if (group_name == null) {
+                    out.println("false");
+                    return;
+                }
 
-            LOGGER.info("Creating group chat \n[Owner]: " + sender + ", [Group Name]: " + group_name);
+                LOGGER.info("Creating group chat \n[Owner]: " + sender + ", [Group Name]: " + group_name);
 
-            isChatCreated = createGroupChat(
-                    group_name,
-                    new String[] {sender},
-                    message_key
-            );
-            break;
+                isChatCreated = createGroupChat(
+                        group_name,
+                        new String[] {sender},
+                        message_key
+                );
+                break;
         }
 
         if (!isChatCreated) {
@@ -112,7 +112,7 @@ public class CreateChat extends HttpServlet {
      * @param message_key Key used to encrypt and decrypt chat messagaes on client side
      * @return isChatCreated
      */
-    protected
+    private
     boolean createUserChat (String sender, String receiver, String message_key) {
         System.out.println("Creating a chat");
         Connection conn = null;
@@ -162,7 +162,15 @@ public class CreateChat extends HttpServlet {
         return isChatCreated;
     }
 
-    protected
+    /**
+     * Create chat between two users
+     *
+     * @param group_name Name of the group
+     * @param users Users to be added to the group
+     * @param message_key Key used to encrypt and decrypt chat messagaes on client side
+     * @return isChatCreated
+     */
+    private
     boolean createGroupChat (String group_name, String[] users, String message_key) {
         LOGGER.info("Creating a group chat");
 
@@ -199,6 +207,7 @@ public class CreateChat extends HttpServlet {
 
             isChatCreated = true;
         } catch (SQLException e) {
+            LOGGER.info("\nmaybe .addBatch() error");
             LOGGER.severe(e.getMessage());
         } finally {
             try { rs.close(); } catch (Exception e) {}
@@ -216,35 +225,34 @@ public class CreateChat extends HttpServlet {
      * @param receiver User to receive the message
      * @return doesChatExist
      */
-    protected
+    private
     boolean doesChatExist (String sender, String receiver) {
-        return false;
-		/*Connection conn = null;
+		Connection conn = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 
 		boolean doesChatExist = false;
 
-		try {
+        try {
 			conn = DatabaseManager.getConnection();
-			stmt = conn.prepareStatement("SELECT chat_id FROM chat_manager WHERE (user_one=? OR user_two=?) AND (user_one=? OR user_two=?)");
+			stmt = conn.prepareStatement("SELECT username from chat_users WHERE chat_id IN (SELECT chat_id from chat_users WHERE chat_id NOT IN (SELECT chat_id FROM chat_groups) AND username=?) AND username!=?");
 			stmt.setString(1, sender);
 			stmt.setString(2, sender);
-			stmt.setString(3, receiver);
-			stmt.setString(4, receiver);
 
 			rs = stmt.executeQuery();
-			if (rs.next()) {
+			rs.next();
+			if (receiver.equals(rs.getString("username"))) {
 				doesChatExist = true;
 			}
 		} catch (SQLException e) {
     		LOGGER.severe(e.getMessage());
 		} finally {
+            try { rs.close(); } catch (Exception e) {}
     		try { stmt.close(); } catch (Exception e) {}
     		try { conn.close(); } catch (Exception e) {}
 		}
 
-		return doesChatExist;*/
+		return doesChatExist;
     }
 
 

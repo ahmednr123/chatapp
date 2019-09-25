@@ -62,9 +62,9 @@ const DashboardView = {
 			if (res == "true") {
 				DashboardView.updateChats(_xhr);
 			} else if (res == "false") {
-				alert("The chat with the user already exists");
+				alert("User already added");
 			} else if (res == "err") {
-				alert("User not found");
+				alert("User not found or already added");
 			}
 			$('#username').value = "";
 		})

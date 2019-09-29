@@ -1,6 +1,5 @@
 package com.chatapp.servlet.groups;
 
-import com.chatapp.servlet.groups.AddUser;
 import com.chatapp.util.DatabaseManager;
 import com.chatapp.util.DatabaseQuery;
 
@@ -90,7 +89,7 @@ public class RemoveUser extends HttpServlet {
      * @param username
      * @return
      */
-    private
+    private synchronized
     boolean removeUser (int chat_id, String username) {
         boolean isUserRemoved = false;
         Connection conn = null;

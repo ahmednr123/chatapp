@@ -21,8 +21,8 @@ import java.util.logging.Logger;
  *	- GET
  *		Redirect to /ChatApp/login.html
  *	- POST
- *		@param username 
- *		@param password
+ *		[username]
+ *		[password]
  *		(onPass Redirect) /ChatApp/chat_app.html
  *		(onFail Redirect) /ChatApp/auth_fail.html
  */

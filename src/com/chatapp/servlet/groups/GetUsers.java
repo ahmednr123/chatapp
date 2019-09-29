@@ -100,6 +100,12 @@ public class GetUsers extends HttpServlet {
         return groupUsers;
     }
 
+    /**
+     * Get String of ArrayList
+     *
+     * @param array
+     * @return
+     */
     private
     String jsonStringArray (ArrayList<String> array) {
         String jsonArray = "[";
@@ -116,5 +122,4 @@ public class GetUsers extends HttpServlet {
 
         return jsonArray;
     }
-
 }

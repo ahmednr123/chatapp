@@ -28,7 +28,7 @@ const ChatView = {
 				<!--<div class="vertical msg-info">
 					<span class="time">${msg_data.time}</span>
 				</div>-->
-				<div class="message ${(display_name)?`first-bubble`:``}" id="msg_${msg_data.msg_id}">
+				<div class="message ${(display_name)?`first-bubble`:``}" id="msg_${msg_data.timestamp}">
 					${msg_data.msg}
 				</div>
 			</message-bubble>
@@ -38,12 +38,12 @@ const ChatView = {
 
 	show: function (chat_id, chat_name, msg_key, isGroup) {
 		this.data = {
-			// chatMessage Format: {(receiver: true,)msg_id:"", time: "", msg:""}
+			// chatMessage Format: {(receiver: true,)timestamp:"", time: "", msg:""}
 			chatMessages: [],
 			receiver: chat_name,
 			chat_id: chat_id,
-			old_msg_id: -1,
-			new_msg_id: -1,
+			old_timestamp: -1,
+			new_timestamp: -1,
 			msg_key: msg_key,
 			more: false,
 			isGroup: isGroup,
@@ -58,7 +58,7 @@ const ChatView = {
 		$('#send_msg').addEventListener('click', this.sendMessage);
 		
 		$('#refresh_btn').addEventListener('click', () => 
-				this.getMessages(MessageType.NEW, this.data.new_msg_id)
+				this.getMessages(MessageType.NEW, this.data.new_timestamp)
 		);
 		
 		if (isGroup)
@@ -70,13 +70,18 @@ const ChatView = {
 		this.render();
 	},
 
-	getMessages: function (type, msg_id) {
+	getMessages: function (type, timestamp) {
+		if (timestamp == -1) {
+			this.getMessages(MessageType.CURRENT)
+			return
+		}
+
 		let api = `/ChatApp/messages
 				?type=${type}
 				&chat_id=${ChatView.data.chat_id}`
 
-		if (msg_id) 
-			api += `&msg_id=${msg_id}`
+		if (timestamp) 
+			api += `&timestamp=${timestamp}`
 
 		this.data.temp_string = ""
 		
@@ -90,7 +95,7 @@ const ChatView = {
 				if (type == MessageType.CURRENT) {
 					ChatView.data.chatMessages = []
 					if (res[0])
-						ChatView.data.new_msg_id = res[0].msg_id;
+						ChatView.data.new_timestamp = res[0].timestamp;
 				}
 
 				if (type == MessageType.CURRENT || type == MessageType.OLD) {
@@ -103,7 +108,7 @@ const ChatView = {
 				for (let json of res) {
 					let chatMessage = 
 						{
-							msg_id: json.msg_id, 
+							timestamp: json.timestamp, 
 							msg: Decrypt(json.message, ChatView.data.msg_key), 
 							time: json.time
 						}
@@ -113,10 +118,10 @@ const ChatView = {
 
 					if (type == MessageType.CURRENT || type == MessageType.OLD) {
 						ChatView.data.chatMessages.unshift(chatMessage);
-						ChatView.data.old_msg_id = json.msg_id;
+						ChatView.data.old_timestamp = json.timestamp;
 					} else {
 						ChatView.data.chatMessages.push(chatMessage);
-						ChatView.data.new_msg_id = json.msg_id;
+						ChatView.data.new_timestamp = json.timestamp;
 					}
 					
 				}
@@ -132,22 +137,24 @@ const ChatView = {
 	},
 
 	sendMessage: function () {
-		$xhrPost('/ChatApp/message', 
-			{
-				chat_id: ChatView.data.chat_id,
-				message: Encrypt($("#message").value, ChatView.data.msg_key)
-			}, 
-			(res) => {
-				console.log("POST[/message] :" + res);
-				$('#message').value = "";
-				res = res.trim();
-				res = JSON.parse(res);
+		if ($("#message").value.length > 0) {
+			$xhrPost('/ChatApp/message', 
+				{
+					chat_id: ChatView.data.chat_id,
+					message: Encrypt($("#message").value, ChatView.data.msg_key)
+				}, 
+				(res) => {
+					console.log("POST[/message] :" + res);
+					$('#message').value = "";
+					res = res.trim();
+					res = JSON.parse(res);
 
-				if (res.reply == true) {
-				    ChatView.getMessages(MessageType.NEW, ChatView.data.new_msg_id);
+					if (res.reply == true) {
+						ChatView.getMessages(MessageType.NEW, ChatView.data.new_timestamp);
+					}
 				}
-			}
-		)
+			)
+		}
 	},
 
 	render: function () {
@@ -157,7 +164,7 @@ const ChatView = {
 			$('chat-messages').innerHTML = this.html.show_more;
 			setTimeout(function () {
 				$('show-more').addEventListener('click', () => {
-					ChatView.getMessages(MessageType.OLD, ChatView.data.old_msg_id)
+					ChatView.getMessages(MessageType.OLD, ChatView.data.old_timestamp)
 				});
 			}, 200)
 		}
@@ -173,7 +180,6 @@ const ChatView = {
 }
 
 // ====================================================== //
-// SimpleCrypto.js======================================= //
 
 function Encrypt (content, passcode) {
 	console.log(typeof(passcode))

@@ -1,0 +1,9 @@
+{
+    "mappings": {
+        "properties": {
+            "sender": {"type": "keyword"},
+            "message": {"type": "text"},
+            "timestamp": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss.SSS"}
+        }
+    }
+}

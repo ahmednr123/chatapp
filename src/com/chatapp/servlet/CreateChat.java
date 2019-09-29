@@ -1,18 +1,19 @@
 package com.chatapp.servlet;
 
-import java.sql.*;
-import java.util.logging.Logger;
-
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.chatapp.util.DatabaseManager;
+import com.chatapp.util.ElasticManager;
+import com.chatapp.util.GetJson;
+import org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import com.chatapp.util.DatabaseManager;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.sql.*;
+import java.util.logging.Logger;
 
 /**
  *  - Route: /create_chat
@@ -82,7 +83,8 @@ public class CreateChat extends HttpServlet {
 
                 // Check if appropriate parameters are passed with the request
                 if (group_name == null) {
-                    out.println("false");
+                    out.print("false");
+                    out.close();
                     return;
                 }
 
@@ -97,7 +99,8 @@ public class CreateChat extends HttpServlet {
         }
 
         if (!isChatCreated) {
-            out.println("err");
+            out.print("err");
+            out.close();
             return;
         }
 
@@ -110,12 +113,12 @@ public class CreateChat extends HttpServlet {
      *
      * @param sender User sending message to the Chat
      * @param receiver User to receive the message
-     * @param message_key Key used to encrypt and decrypt chat messagaes on client side
+     * @param message_key Key used to encrypt and decrypt chat messages on client side
      * @return isChatCreated
      */
-    private
+    private synchronized
     boolean createUserChat (String sender, String receiver, String message_key) {
-        System.out.println("Creating a chat");
+        LOGGER.info("\nCreating a chat");
         Connection conn = null;
         PreparedStatement stmt = null;
         ResultSet rs = null;
@@ -124,7 +127,7 @@ public class CreateChat extends HttpServlet {
         boolean doesChatExist = doesChatExist(sender, receiver);
 
         if (doesChatExist) {
-            System.out.println("[" + sender + ", " + receiver + "] pair already exists!");
+            LOGGER.info("\n[" + sender + ", " + receiver + "] pair already exists!");
             return false;
         }
 
@@ -151,6 +154,8 @@ public class CreateChat extends HttpServlet {
 
             stmt.executeBatch();
 
+            createChatMessageIndex(chat_id);
+
             isChatCreated = true;
         } catch (SQLException e) {
             LOGGER.severe(e.getMessage());
@@ -164,14 +169,14 @@ public class CreateChat extends HttpServlet {
     }
 
     /**
-     * Create chat between two users
+     * Create group chat
      *
      * @param group_name Name of the group
      * @param users Users to be added to the group
      * @param message_key Key used to encrypt and decrypt chat messagaes on client side
      * @return isChatCreated
      */
-    private
+    private synchronized
     boolean createGroupChat (String group_name, String[] users, String message_key) {
         LOGGER.info("Creating a group chat");
 
@@ -205,6 +210,8 @@ public class CreateChat extends HttpServlet {
             }
 
             stmt.executeBatch();
+
+            createChatMessageIndex(chat_id);
 
             isChatCreated = true;
         } catch (SQLException e) {
@@ -256,8 +263,34 @@ public class CreateChat extends HttpServlet {
 		return doesChatExist;
     }
 
+    /**
+     * Create a chat index in elasticsearch
+     *
+     * @param chat_id
+     * @return
+     */
+    private boolean createChatMessageIndex (int chat_id) {
+        boolean isIndexCreated = false;
+        JSONObject responseObj = null;
 
-    protected static
+        try {
+            responseObj = ElasticManager.put("/" + chat_id + "_msgs", GetJson.from("es-mappings/chat_messages.json"));
+            System.out.println(responseObj.toString());
+            if(responseObj.getString("error") != null) {
+                throw new RuntimeException();
+            }
+            isIndexCreated = true;
+        } catch (IOException e) {
+            LOGGER.severe("JSON error: \n" + e.getMessage());
+        } catch (RuntimeException e) {
+            LOGGER.severe(e.getMessage());
+        }
+
+        return isIndexCreated;
+    }
+
+
+    private static
     final String ALPHA_NUMERIC_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     /**
@@ -266,7 +299,7 @@ public class CreateChat extends HttpServlet {
      * @param count Number of random characters to be added to the string
      * @return Random String
      */
-    protected
+    private
     static String randomKey(int count) {
         StringBuilder builder = new StringBuilder();
 

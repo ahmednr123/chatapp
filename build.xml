@@ -21,6 +21,7 @@
                 <pathelement path="WEB-INF\lib\servlet-api.jar"/>
                 <pathelement path="WEB-INF\lib\mysql-connector-java-8.0.17.jar"/>
                 <pathelement path="WEB-INF\lib\tomcat-jdbc-8.5.32.jar" />
+                <pathelement path="WEB-INF\lib\json-20190722.jar" />
             </classpath>
         </javac>
     </target>

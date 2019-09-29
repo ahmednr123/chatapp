@@ -1,32 +1,27 @@
 package com.chatapp.servlet;
 
-import java.util.ArrayList;
-import java.util.logging.Logger;
-
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.chatapp.util.ElasticManager;
+import com.chatapp.util.GetJson;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Connection;
-import java.sql.Timestamp;
-
-import com.chatapp.util.DatabaseManager;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.logging.Logger;
 
 /**
  *  - Route: /messages
  *	- GET
- *		@param type Type of messages to get from database
- *		@param chat_id Chat ID corresponding to the users chat
- *		@param msg_id [OPTIONAL] Message ID use dependent on the type of messages required
- *		@param username (FROM SESSION)
+ *		[type] Type of messages to get from database
+ *		[chat_id] Chat ID corresponding to the users chat
+ *		[msg_id] [OPTIONAL] Message ID use dependent on the type of messages required
+ *		[username] (FROM SESSION)
  *		(json reply) Array of Chat Messages
  *		(onFail reply) false
  */
@@ -50,7 +45,7 @@ public class GetMessages extends HttpServlet {
 
 		HttpSession session = request.getSession(false);
 
-		int chat_id, type, msg_id;
+		int chat_id, type;
 
 		// Check if appropriate parameters are passed with the request
 		// Also check if a user session exists
@@ -69,14 +64,17 @@ public class GetMessages extends HttpServlet {
 		// msg_id (Optional Parameter)
 		// Check if msg_id is passed and accordingly execute
 		// the getChatMessages method
-		if (request.getParameter("msg_id") == null) {
+		if (request.getParameter("timestamp") == null) {
 			chatMessages = getChatMessages(type, chat_id);
 		} else {
-			msg_id = Integer.parseInt(request.getParameter("msg_id"));
-			chatMessages = getChatMessages(type, chat_id, msg_id);
+			try {
+				chatMessages = getChatMessages(type, chat_id, request.getParameter("timestamp"));
+			} catch (Exception e) {
+				LOGGER.severe(e.getMessage());
+			}
 		}
 
-		LOGGER.info("Get Messages request! \nchat_id: " + chat_id + " \ntype: " + type);
+		LOGGER.info("GetMessages request! \nchat_id: " + chat_id + " \ntype: " + type);
 
 		out.println(ChatMessage.getJsonStringArray(chatMessages));
 		out.close();
@@ -90,84 +88,96 @@ public class GetMessages extends HttpServlet {
 	}
 
 	/**
-	 * To retreive chat messages from the database
-	 * 
+	 * To retrieve chat messages from the database
+	 *
 	 * @param type Type of the messages needed to fetch from the database
 	 * @param chat_id Unique Chat ID corresponding to individual user chats
-	 * @return ArrayList<ChatMessages> 
-	 *					Array of chat messages retreived from the database 
+	 * @return ArrayList<ChatMessages>
+	 *					Array of chat messages retrieved from the database
 	 */
-	protected
+	private
 	ArrayList<ChatMessage> getChatMessages (int type, int chat_id) {
-		return getChatMessages (type, chat_id, -1);
+		return getChatMessages(type, chat_id, null);
 	}
 
 	/**
-	 * To retreive chat messages from the database
+	 * To retrieve chat messages from the database
 	 *
-	 * Three types of messages can be retreived from the database:
+	 * Three types of messages can be retrieved from the database:
 	 *		MESSAGE_TYPE_NEW
-	 *			retrieves atmost 10 messages from the database
-	 *			(messages after the given msg_id)
+	 *			retrieves at most 10 messages
+	 *			(messages after the given datetime)
 	 *		MESSAGE_TYPE_OLD
-	 *			retrieves atmost 10 messages from the database
-	 *			(messages before the given msg_id)
+	 *			retrieves at most 10 messages
+	 *			(messages before the given datetime)
 	 *		MESSAGE_TYPE_CURRENT
-	 *			retrieves atmost 10 latest messages from the database
-	 * 
+	 *			retrieves at most 10 latest messages
+	 *
 	 * @param type Type of the messages needed to fetch from the database
 	 * @param chat_id Unique Chat ID corresponding to individual user chats
-	 * @param msg_id Message ID used as per the type of messages to be retreived
-	 * @return ArrayList<ChatMessages> 
-	 *					Array of chat messages retreived from the database 
+	 * @param datetime Date and time of the message
+	 * @return ArrayList<ChatMessages>
+	 *					Array of chat messages retrieved from the database
 	 */
-	protected
-	ArrayList<ChatMessage> getChatMessages (int type, int chat_id, int msg_id) {
-		Connection conn = null;
-		PreparedStatement stmt = null;
-		ResultSet res = null;
-
+	private
+	ArrayList<ChatMessage> getChatMessages (int type, int chat_id, String datetime) {
 		ArrayList<ChatMessage> chatMessages = new ArrayList<ChatMessage>();
+		JSONObject resObj = null;
+
+		String sort_order = null, time_order = null;
+
+		switch (type) {
+			case MESSAGE_TYPE_NEW:
+				time_order = "gt";
+				sort_order = "asc";
+				break;
+			case MESSAGE_TYPE_OLD:
+				time_order = "lte";
+				sort_order = "desc";
+				break;
+			case MESSAGE_TYPE_CURRENT:
+				sort_order = "desc";
+				break;
+		}
+
+		JSONObject reqObj = new JSONObject(GetJson.from("es-mappings/message.json"));
+
+		if (time_order != null) {
+			// Set Timestamp filter
+			reqObj.getJSONObject("query")
+					.getJSONObject("bool")
+					.getJSONArray("filter")
+					.getJSONObject(0).getJSONObject("range")
+					.getJSONObject("timestamp").put(time_order, datetime);
+		}
+
+		// Set order of message retrieval
+		reqObj.getJSONArray("sort").getJSONObject(0).getJSONObject("timestamp").put("order", sort_order);
+
+		// Set number of messages to extract
+		reqObj.put("size", 10);
+
+		System.out.println("Message data: \n" + reqObj.toString());
 
 		try {
-			conn = DatabaseManager.getConnection();
-
-			switch (type) {
-				case MESSAGE_TYPE_NEW:
-					System.out.println("GETTING NEW");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id>? ORDER BY msg_id ASC LIMIT 10");
-					stmt.setInt(1, chat_id);
-					stmt.setInt(2, msg_id);
-					break;
-				case MESSAGE_TYPE_OLD:
-					System.out.println("GETTING OLD");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? AND msg_id<? ORDER BY msg_id DESC LIMIT 10");
-					stmt.setInt(1, chat_id);
-					stmt.setInt(2, msg_id);
-					break;
-				case MESSAGE_TYPE_CURRENT:
-					System.out.println("GETTING CURRENT");
-					stmt = conn.prepareStatement("SELECT * FROM chats WHERE chat_id=? ORDER BY msg_id DESC LIMIT 10");
-					stmt.setInt(1, chat_id);
-					break;
-			}
-
-			res = stmt.executeQuery();
-			while (res.next()) {
+			resObj = ElasticManager.get("/" + chat_id + "_msgs/_search", reqObj.toString());
+			System.out.println(resObj.toString());
+			JSONArray resArray = resObj.getJSONObject("hits").getJSONArray("hits");
+			for (Object obj : resArray) {
+				JSONObject data = ((JSONObject)obj).getJSONObject("_source");
 				chatMessages.add(
-					new ChatMessage(res.getInt("msg_id"),
-						res.getString("sender"), res.getString("message"), 
-						res.getTimestamp("time"))
+						new ChatMessage(
+							((JSONObject)obj).getString("_id"),
+							data.getString("sender"),
+							data.getString("message"),
+							data.get("timestamp").toString()
+						)
 				);
 			}
-		} catch (SQLException e) {
+		} catch (IOException e) {
 			LOGGER.severe(e.getMessage());
-		} catch (Exception e) {
-    		LOGGER.severe(e.getMessage());
-		} finally {
-			try { res.close(); } catch (Exception e) {}
-			try { stmt.close(); } catch (Exception e) {}
-			try { conn.close(); } catch (Exception e) {}
+		} catch (RuntimeException e) {
+			LOGGER.severe("Elasticsearch Error: \n" + resObj.toString());
 		}
 
 		return chatMessages;
@@ -175,27 +185,27 @@ public class GetMessages extends HttpServlet {
 }
 
 class ChatMessage {
-	private int msg_id;
+	private String msg_id;
 	private String sender;
 	private String message;
-	private String time;
+	private String timestamp;
 
-	public ChatMessage (int msg_id, String sender, String message, Timestamp time) {
-		if (sender == null || message == null || time == null) {
+	public ChatMessage (String msg_id, String sender, String message, String timestamp) {
+		if (msg_id == null || sender == null || message == null || timestamp == null) {
 			throw new NullPointerException();
 		}
 
 		this.msg_id = msg_id;
 		this.sender = sender;
 		this.message = message;
-		this.time = time.toString();
+		this.timestamp = timestamp;
 	}
 
 	public String toJsonString () {
-		return "{\"msg_id\": " + msg_id
-				+ ",\"sender\":\"" + sender 
+		return "{\"msg_id\": \"" + msg_id
+				+ "\", \"sender\":\"" + sender
 				+ "\", \"message\": \"" + message 
-				+ "\", \"time\": \"" + time + "\"}";
+				+ "\", \"timestamp\": \"" + timestamp + "\"}";
 	}
 
 	public static String getJsonStringArray (ArrayList<ChatMessage> chatMessages) {

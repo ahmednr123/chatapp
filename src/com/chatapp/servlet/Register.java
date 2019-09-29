@@ -21,8 +21,8 @@ import java.util.logging.Logger;
  *	- GET
  *		Redirct to /ChatApp/register.html
  *	- POST
- *		@param username 
- *		@param password
+ *		[username]
+ *		[password]
  *		(onPass Redirect) /ChatApp/chat_app.html
  *		(onFail Redirect) /ChatApp/db_error.html
  */
@@ -65,11 +65,11 @@ public class Register extends HttpServlet {
 	/**
 	 * To register a user
 	 * 
-	 * @param username
-	 * @param password
+	 * @param username User Id
+	 * @param password User password
 	 * @return isUserRegistered
 	 */
-	private
+	private synchronized
 	boolean registerUser (String username, String password) {
 		PreparedStatement stmt = null;
 		Connection conn = null;

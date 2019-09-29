@@ -1,10 +1,11 @@
 package com.chatapp.listeners;
 
+import com.chatapp.util.DatabaseManager;
+import com.chatapp.util.ElasticManager;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
-
-import com.chatapp.util.DatabaseManager;
 
 @WebListener
 public class AppContextListener implements ServletContextListener {
@@ -13,6 +14,7 @@ public class AppContextListener implements ServletContextListener {
 	void contextInitialized(ServletContextEvent servletContextEvent) 
 	{
 		DatabaseManager.initialize();
+		ElasticManager.setBaseUrl("localhost", 9200, "http");
 	}
 	
 	public 

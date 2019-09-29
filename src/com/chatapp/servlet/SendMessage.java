@@ -1,30 +1,24 @@
 package com.chatapp.servlet;
 
-import java.util.Calendar;
-import java.util.logging.Logger;
-
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.chatapp.util.ElasticManager;
+import org.json.JSONObject;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Connection;
-import java.sql.Timestamp;
-
-import com.chatapp.util.DatabaseManager;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Logger;
 
 /**
  *  - Route: /message
  *	- POST
- *		@param chat_id Chat ID corresponding to the users chat
- *		@param username (FROM SESSION)
+ *		[chat_id] Chat ID corresponding to the users chat
+ *		[username] (FROM SESSION)
  *		(json reply) message with timestamp
  *		(onFail reply) false
  */
@@ -77,59 +71,55 @@ public class SendMessage extends HttpServlet {
 
 		int chat_id = Integer.parseInt(chat_id_string);
 
-		Timestamp datetime = sendMessage(chat_id, sender, message);
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+		Date datetime = new Date();
+		boolean isMessageSent = sendMessage(chat_id, sender, message, datetime);
 
-		if (datetime == null) {
+		if (!isMessageSent) {
 			out.println("{\"reply\":false}");
 			out.close();
 			return;
 		}
 
 		out.println("{\"reply\":true,\"message\": \"" + message 
-						+ "\", \"time\": \"" + datetime.toString() + "\"}");
+						+ "\", \"timestamp\": \"" + formatter.format(datetime) + "\"}");
 		out.close();
 	}
 
 	/**
-	 * Insert chat message to the database
-	 * 
-	 * @param chat_id Unique Chat ID corresponding to individual user chats
-	 * @param sender User sending message to the Chat
-	 * @param message Chat Message
-	 * @return Timestamp
-	 *					Timestamp of the message stored in the database
+	 * Add message to index of chat
+	 *
+	 * @param chat_id
+	 * @param sender
+	 * @param message
+	 * @param dt Date and time when the message was received
+	 * @return
 	 */
-	protected 
-	Timestamp sendMessage (int chat_id, String sender, String message) 
-	{
-		System.out.println("Sending a message");
-		Connection conn = null;
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
+	private
+	boolean sendMessage (int chat_id, String sender, String message, Date dt) {
+		boolean isIndexInserted = false;
+		JSONObject reqObject = new JSONObject();
+		JSONObject resObject = null;
 
-		Timestamp datetime = null;
+		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
-		try {
-			conn = DatabaseManager.getConnection();
+		reqObject.put("sender", sender);
+		reqObject.put("message", message);
+		reqObject.put("timestamp", formatter.format(dt));
 
-			Calendar calendar = Calendar.getInstance();
-			datetime = new Timestamp(calendar.getTime().getTime());
+		LOGGER.info("POST DATA: " + reqObject.toString());
 
-			stmt = conn.prepareStatement("INSERT INTO chats (chat_id, sender, message, time) VALUES (?,?,?,?)");
-			stmt.setInt(1, chat_id);
-			stmt.setString(2, sender);
-			stmt.setString(3, message);
-			stmt.setTimestamp(4, datetime);
-			
-			stmt.executeUpdate();
-		} catch (SQLException e) {
-    		LOGGER.severe(e.getMessage());
-		} finally {
-    		try { rs.close(); } catch (Exception e) {}
-    		try { stmt.close(); } catch (Exception e) {}
-    		try { conn.close(); } catch (Exception e) {}
+		try{
+			resObject = ElasticManager.post("/" + chat_id + "_msgs/_doc/?refresh", reqObject.toString());
+			isIndexInserted = true;
+			if (resObject.get("error") != null) {
+				throw new RuntimeException();
+			}
+		} catch (IOException e) {
+			LOGGER.severe(e.getMessage());
+		} catch (RuntimeException e) {
+			LOGGER.severe(resObject.toString());
 		}
-
-		return datetime;
+		return isIndexInserted;
 	}
 }

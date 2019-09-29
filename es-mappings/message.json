@@ -1,0 +1,13 @@
+{
+    "query": {
+        "bool": {
+            "filter": [
+                {"range": {"timestamp" : {}}}
+            ]
+        }
+    },
+
+    "sort": [
+        {"timestamp":  {"order": ""}}
+    ]
+}

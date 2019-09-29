@@ -89,7 +89,7 @@ public class AddUser extends HttpServlet {
      * @param username
      * @return
      */
-    private
+    private synchronized
     boolean addUser (int chat_id, String username) {
         boolean isUserAdded = false;
         Connection conn = null;

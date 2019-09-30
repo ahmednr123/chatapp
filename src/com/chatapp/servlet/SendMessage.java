@@ -58,7 +58,7 @@ public class SendMessage extends HttpServlet {
 
 		// Check if appropriate parameters are passed with the request
 		if (chat_id_string == null || message == null) {
-			LOGGER.info("Not enough parameter passed");
+			LOGGER.info("Not enough parameters passed");
 			out.println("{\"reply\":false}");
 			return;
 		}

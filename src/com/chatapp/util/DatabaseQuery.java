@@ -33,7 +33,8 @@ public class DatabaseQuery {
 
         try {
             conn = DatabaseManager.getConnection();
-            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
+            //stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id IN (SELECT chat_id FROM chat_groups WHERE chat_id=?) AND username=?");
+            stmt = conn.prepareStatement("SELECT username FROM chat_users WHERE chat_id=? AND username=?");
             stmt.setInt(1, chat_id);
             stmt.setString(2, username);
 

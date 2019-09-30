@@ -226,7 +226,16 @@ message-bubble.flip * {
 	color: royalblue;
 	position: absolute;
 	top: 12px;
-	right: 60px;
+	right: 200px;
+	cursor: pointer
+}
+
+#search_messages_btn {
+	font-size:12px;
+	color: royalblue;
+	position: absolute;
+	top: 12px;
+	right: 68px;
 	cursor: pointer
 }
 
@@ -236,6 +245,7 @@ message-bubble.flip * {
 
 /* ======================== */
 /* POPUP ================== */
+/* == GroupUsers ========== */
 
 #close-popup {
 	margin-top: 85px;
@@ -315,6 +325,19 @@ pop-up {
 	text-align: center;
 	font-size: 12px;
 	font-weight: bold;
+}
+
+/* ======================== */
+/* = SearchMessages ======= */
+
+#search-result {
+	border: 1px solid lightgray;
+	border-radius: 5px;
+	margin-top: 20px;
+	max-height: 300px;
+	overflow: auto;
+	padding: 10px;
+	width: calc(100% - 20px);
 }
 
 /* ======================== */

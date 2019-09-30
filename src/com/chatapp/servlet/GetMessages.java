@@ -1,7 +1,10 @@
 package com.chatapp.servlet;
 
+import com.chatapp.format.ChatMessage;
+import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
 import com.chatapp.util.GetJson;
+import com.chatapp.util.XJSONObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -42,7 +45,7 @@ public class GetMessages extends HttpServlet {
 			throws ServletException, IOException 
 	{
 		PrintWriter out = response.getWriter();
-
+		String session_user = null;
 		HttpSession session = request.getSession(false);
 
 		int chat_id, type;
@@ -52,9 +55,16 @@ public class GetMessages extends HttpServlet {
 		try {
 			chat_id = Integer.parseInt(request.getParameter("chat_id"));
 			type = Integer.parseInt(request.getParameter("type"));
-			session.getAttribute("username");
+			session_user = (String)session.getAttribute("username");
 		} catch (NullPointerException e) {
 			out.println("false");
+			out.close();
+			return;
+		}
+
+		if ( !DatabaseQuery.isUserAuthorized(session_user, chat_id) ) {
+			LOGGER.info("User: " + session_user + " accessed an unauthorized group");
+			out.print("false");
 			out.close();
 			return;
 		}
@@ -122,7 +132,7 @@ public class GetMessages extends HttpServlet {
 	private
 	ArrayList<ChatMessage> getChatMessages (int type, int chat_id, String datetime) {
 		ArrayList<ChatMessage> chatMessages = new ArrayList<ChatMessage>();
-		JSONObject resObj = null;
+		XJSONObject resObj = null;
 
 		String sort_order = null, time_order = null;
 
@@ -132,7 +142,7 @@ public class GetMessages extends HttpServlet {
 				sort_order = "asc";
 				break;
 			case MESSAGE_TYPE_OLD:
-				time_order = "lte";
+				time_order = "lt";
 				sort_order = "desc";
 				break;
 			case MESSAGE_TYPE_CURRENT:
@@ -140,19 +150,16 @@ public class GetMessages extends HttpServlet {
 				break;
 		}
 
-		JSONObject reqObj = new JSONObject(GetJson.from("es-mappings/message.json"));
+		XJSONObject reqObj = new XJSONObject(GetJson.from("es-mappings/message.json"));
 
 		if (time_order != null) {
 			// Set Timestamp filter
-			reqObj.getJSONObject("query")
-					.getJSONObject("bool")
-					.getJSONArray("filter")
-					.getJSONObject(0).getJSONObject("range")
-					.getJSONObject("timestamp").put(time_order, datetime);
+			reqObj.put("query.bool.filter[0].range.timestamp."+time_order, datetime);
+
 		}
 
 		// Set order of message retrieval
-		reqObj.getJSONArray("sort").getJSONObject(0).getJSONObject("timestamp").put("order", sort_order);
+		reqObj.put("sort[0].timestamp.order",sort_order);
 
 		// Set number of messages to extract
 		reqObj.put("size", 10);
@@ -160,9 +167,9 @@ public class GetMessages extends HttpServlet {
 		System.out.println("Message data: \n" + reqObj.toString());
 
 		try {
-			resObj = ElasticManager.get("/" + chat_id + "_msgs/_search", reqObj.toString());
+			resObj = new XJSONObject(ElasticManager.get("/" + chat_id + "_msgs/_search", reqObj.toString()));
 			System.out.println(resObj.toString());
-			JSONArray resArray = resObj.getJSONObject("hits").getJSONArray("hits");
+			JSONArray resArray = (JSONArray) resObj.get("hits.hits");
 			for (Object obj : resArray) {
 				JSONObject data = ((JSONObject)obj).getJSONObject("_source");
 				chatMessages.add(
@@ -181,44 +188,5 @@ public class GetMessages extends HttpServlet {
 		}
 
 		return chatMessages;
-	}
-}
-
-class ChatMessage {
-	private String msg_id;
-	private String sender;
-	private String message;
-	private String timestamp;
-
-	public ChatMessage (String msg_id, String sender, String message, String timestamp) {
-		if (msg_id == null || sender == null || message == null || timestamp == null) {
-			throw new NullPointerException();
-		}
-
-		this.msg_id = msg_id;
-		this.sender = sender;
-		this.message = message;
-		this.timestamp = timestamp;
-	}
-
-	public String toJsonString () {
-		return "{\"msg_id\": \"" + msg_id
-				+ "\", \"sender\":\"" + sender
-				+ "\", \"message\": \"" + message 
-				+ "\", \"timestamp\": \"" + timestamp + "\"}";
-	}
-
-	public static String getJsonStringArray (ArrayList<ChatMessage> chatMessages) {
-		String arrayString = "[";
-
-		if (chatMessages.size() > 0) {
-			for (ChatMessage chatMessage : chatMessages) {
-				arrayString += chatMessage.toJsonString() + ",";
-			}
-
-			arrayString = arrayString.substring(0, arrayString.length() - 1);
-		}
-		
-		return arrayString + "]";
 	}
 }

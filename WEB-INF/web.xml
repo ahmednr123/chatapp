@@ -55,6 +55,10 @@
         <servlet-name>GetUsers</servlet-name>
         <servlet-class>com.chatapp.servlet.groups.GetUsers</servlet-class>
     </servlet>
+    <servlet>
+        <servlet-name>SearchMessages</servlet-name>
+        <servlet-class>com.chatapp.servlet.SearchMessages</servlet-class>
+    </servlet>
 
     <!-- Servlet Mappings -->
     <servlet-mapping>
@@ -100,6 +104,10 @@
     <servlet-mapping>
         <servlet-name>GetUsers</servlet-name>
         <url-pattern>/get_users</url-pattern>
+    </servlet-mapping>
+    <servlet-mapping>
+        <servlet-name>SearchMessages</servlet-name>
+        <url-pattern>/search_messages</url-pattern>
     </servlet-mapping>
     
     <listener>

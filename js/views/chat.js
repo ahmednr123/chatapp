@@ -10,6 +10,7 @@ const ChatView = {
 			<div id="top-bar" class="horizontal full">
 				<input type="button" value="Go Back" id="go_back">
 				${(ChatView.data.isGroup)?`<div id="group_users_btn">Users</div>`:``}
+				<div id="search_messages_btn">Search Messages</div>
 				<div id="refresh_btn">Refresh</div>
 			</div>
 			<div id="app-body">
@@ -61,11 +62,15 @@ const ChatView = {
 				this.getMessages(MessageType.NEW, this.data.new_timestamp)
 		);
 		
+		$('#search_messages_btn').addEventListener('click', () => {
+			PopUp.show_search_messages(this.data.chat_id);
+		});
+
 		if (isGroup)
 			$('#group_users_btn').addEventListener('click', () => {
-				PopUp.show(this.data.chat_id);
+				PopUp.show_group_users(this.data.chat_id);
 			});
-		
+
 		this.getMessages(MessageType.CURRENT);
 		this.render();
 	},
@@ -109,8 +114,7 @@ const ChatView = {
 					let chatMessage = 
 						{
 							timestamp: json.timestamp, 
-							msg: Decrypt(json.message, ChatView.data.msg_key), 
-							time: json.time
+							msg: Decrypt(json.message, ChatView.data.msg_key)
 						}
 
 					chatMessage["isSessionUser"] = (json.sender == $("#session-user").innerHTML)
@@ -182,18 +186,20 @@ const ChatView = {
 // ====================================================== //
 
 function Encrypt (content, passcode) {
-	console.log(typeof(passcode))
+	/*console.log(typeof(passcode))
 	var result = []; var passLen = passcode.length ;
 	for(var i = 0  ; i < content.length ; i++) {
 		var passOffset = i%passLen ;
 		var calAscii = (content.charCodeAt(i)+passcode.charCodeAt(passOffset));
 		result.push(calAscii);
 	}
-	return JSON.stringify(result);
+	return JSON.stringify(result);*/
+
+	return content;
 }
 
 function Decrypt (content, passcode) {
-	var result = [];var str = '';
+	/*var result = [];var str = '';
 	var codesArr = JSON.parse(content);var passLen = passcode.length ;
 	for(var i = 0  ; i < codesArr.length ; i++) {
 		var passOffset = i%passLen ;
@@ -203,7 +209,9 @@ function Decrypt (content, passcode) {
 	for(var i = 0 ; i < result.length ; i++) {
 		var ch = String.fromCharCode(result[i]); str += ch ;
 	}
-	return str;
+	return str;*/
+
+	return content;
 }
 
 // ======================================================= //

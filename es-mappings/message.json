@@ -1,6 +1,9 @@
 {
     "query": {
         "bool": {
+            "must": {
+                "term": {"chat_id": -1}
+            },
             "filter": [
                 {"range": {"timestamp" : {}}}
             ]

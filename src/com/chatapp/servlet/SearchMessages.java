@@ -3,11 +3,13 @@ package com.chatapp.servlet;
 import com.chatapp.format.ChatMessage;
 import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
-import com.chatapp.util.XJSONObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.xjson.XJSONException;
+import org.json.xjson.XJSONObject;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -17,6 +19,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+@WebServlet(urlPatterns = "/search_messages")
 public class SearchMessages extends HttpServlet {
     private static Logger LOGGER = Logger.getLogger(SendMessage.class.getName());
 
@@ -83,7 +86,7 @@ public class SearchMessages extends HttpServlet {
      * Get messages that match the search result
      *
      * @param chat_id
-     * @param type To search messages with all the terms or to messages with any terms
+     * @param type To search messages with all the terms or with any terms
      * @param search_term Term that has to be searched
      * @param from
      * @return
@@ -93,21 +96,24 @@ public class SearchMessages extends HttpServlet {
         ArrayList<ChatMessage> chatMessages = new ArrayList<>();
         XJSONObject resObj;
 
-        XJSONObject reqObj = new XJSONObject();
-        reqObj.put("query", new JSONObject());
-        reqObj.put("query.match", new JSONObject());
-        reqObj.put("query.match.message", new JSONObject());
-        reqObj.put("query.match.message.query", search_term);
-
-        reqObj.put("size", 10);
-        reqObj.put("from", from);
-
-        if (type == EXACT_TERM_SEARCH) {
-            reqObj.put("query.match.message.operator", "and");
-        }
-
         try {
-            resObj = new XJSONObject(ElasticManager.get("/" + chat_id + "_msgs/_search", reqObj.toString()));
+            XJSONObject reqObj = new XJSONObject();
+            reqObj.setCreateOnFly(true);
+            reqObj.put("query.match.message.query", search_term);
+            reqObj.put("query.bool.must.term.chat_id", chat_id);
+
+            reqObj.put("size", 10);
+            reqObj.put("from", from);
+
+            switch (type) {
+                case EXACT_TERM_SEARCH:
+                    reqObj.put("query.match.message.operator", "and");
+                    break;
+                case ANY_TERM_SEARCH:
+                    //do nothing
+            }
+
+            resObj = new XJSONObject(ElasticManager.get("/messages/_search", reqObj.toString()));
             System.out.println(resObj.toString());
             JSONArray resArray = (JSONArray) resObj.get("hits.hits");
             for (Object obj : resArray) {
@@ -121,7 +127,7 @@ public class SearchMessages extends HttpServlet {
                         )
                 );
             }
-        } catch (IOException | RuntimeException e) {
+        } catch (XJSONException | IOException | RuntimeException e) {
             LOGGER.severe(e.getMessage());
         }
 

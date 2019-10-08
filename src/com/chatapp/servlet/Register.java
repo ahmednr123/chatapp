@@ -1,19 +1,17 @@
 package com.chatapp.servlet;
 
-import java.io.IOException;
+import com.chatapp.util.DatabaseManager;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-
+import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.sql.Connection;
-
-import com.chatapp.util.DatabaseManager;
 import java.util.logging.Logger;
 
 /**
@@ -26,6 +24,7 @@ import java.util.logging.Logger;
  *		(onPass Redirect) /ChatApp/chat_app.html
  *		(onFail Redirect) /ChatApp/db_error.html
  */
+@WebServlet(urlPatterns = "/register")
 public class Register extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOGGER = Logger.getLogger(Register.class.getName());

@@ -1,15 +1,14 @@
 package com.chatapp.servlet;
 
-import java.util.logging.Logger;
-
-import java.io.IOException;
-import java.io.PrintWriter;
-
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.logging.Logger;
 
 /**
  *  - Route: /session
@@ -17,6 +16,7 @@ import javax.servlet.http.HttpSession;
  *		(String reply) true or false
  *		Depicting if the user session was found or not
  */
+@WebServlet(urlPatterns = "/session")
 public class Session extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOGGER = Logger.getLogger(Session.class.getName());

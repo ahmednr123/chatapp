@@ -154,7 +154,9 @@ const ChatView = {
 					res = JSON.parse(res);
 
 					if (res.reply == true) {
-						ChatView.getMessages(MessageType.NEW, ChatView.data.new_timestamp);
+						setTimeout(() => {
+							ChatView.getMessages(MessageType.NEW, ChatView.data.new_timestamp);
+						}, 400)
 					}
 				}
 			)

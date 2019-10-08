@@ -1,9 +1,11 @@
 package com.chatapp.servlet;
 
+import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
 import org.json.JSONObject;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -22,6 +24,7 @@ import java.util.logging.Logger;
  *		(json reply) message with timestamp
  *		(onFail reply) false
  */
+@WebServlet(urlPatterns = "/message", asyncSupported = true)
 public class SendMessage extends HttpServlet {
 	private static Logger LOGGER = Logger.getLogger(SendMessage.class.getName());
 
@@ -51,7 +54,7 @@ public class SendMessage extends HttpServlet {
 			sender = (String) session.getAttribute("username");
 		} catch (NullPointerException e) {
 			LOGGER.info("User session not found");
-			out.println("{\"reply\":false}");
+			out.println("{\"reply\":false, \"reason\":\"User not authenticated\"}");
 			out.close();
 			return;
 		}
@@ -59,13 +62,13 @@ public class SendMessage extends HttpServlet {
 		// Check if appropriate parameters are passed with the request
 		if (chat_id_string == null || message == null) {
 			LOGGER.info("Not enough parameters passed");
-			out.println("{\"reply\":false}");
+			out.println("{\"reply\":false, \"reason\": \"No parameters received\"}");
 			return;
 		}
 
 		if (message == "") {
 			LOGGER.info("Empty message parameter received");
-			out.println("{\"reply\":false}");
+			out.println("{\"reply\":false, \"reason\": \"Empty message parameter\"}");
 			return;
 		}
 
@@ -97,12 +100,17 @@ public class SendMessage extends HttpServlet {
 	 */
 	private
 	boolean sendMessage (int chat_id, String sender, String message, Date dt) {
+		if (DatabaseQuery.isUserAuthorized(sender, chat_id)) {
+			return false;
+		}
+
 		boolean isIndexInserted = false;
 		JSONObject reqObject = new JSONObject();
 		JSONObject resObject = null;
 
 		SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
+		reqObject.put("chat_id", chat_id);
 		reqObject.put("sender", sender);
 		reqObject.put("message", message);
 		reqObject.put("timestamp", formatter.format(dt));
@@ -110,7 +118,7 @@ public class SendMessage extends HttpServlet {
 		LOGGER.info("POST DATA: " + reqObject.toString());
 
 		try{
-			resObject = ElasticManager.post("/" + chat_id + "_msgs/_doc/?refresh", reqObject.toString());
+			resObject = ElasticManager.post("/messages/_doc", reqObject.toString());
 			isIndexInserted = true;
 			if (resObject.get("error") != null) {
 				throw new RuntimeException();

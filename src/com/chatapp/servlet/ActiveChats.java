@@ -4,6 +4,7 @@ import com.chatapp.format.ChatInfo;
 import com.chatapp.util.DatabaseManager;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -24,6 +25,7 @@ import java.util.logging.Logger;
  *		(json reply) Array of Active Chats Info
  *		(onFail reply) false
  */
+@WebServlet(urlPatterns = "/active_chats")
 public class ActiveChats extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOGGER = Logger.getLogger(ActiveChats.class.getName());

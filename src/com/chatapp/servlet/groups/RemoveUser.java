@@ -4,6 +4,7 @@ import com.chatapp.util.DatabaseManager;
 import com.chatapp.util.DatabaseQuery;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
  *		[session_user] (FROM SESSION) to verify session_users privilege
  *		(String reply) true or false
  */
+@WebServlet(urlPatterns = "/remove_user")
 public class RemoveUser extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static Logger LOGGER = Logger.getLogger(AddUser.class.getName());

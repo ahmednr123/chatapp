@@ -4,11 +4,13 @@ import com.chatapp.format.ChatMessage;
 import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
 import com.chatapp.util.GetJson;
-import com.chatapp.util.XJSONObject;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.xjson.XJSONException;
+import org.json.xjson.XJSONObject;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -28,6 +30,7 @@ import java.util.logging.Logger;
  *		(json reply) Array of Chat Messages
  *		(onFail reply) false
  */
+@WebServlet(urlPatterns = "/messages")
 public class GetMessages extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	private static Logger LOGGER = Logger.getLogger(GetMessages.class.getName());
@@ -40,8 +43,9 @@ public class GetMessages extends HttpServlet {
         super();
     }
 
-	protected 
-	void doGet(HttpServletRequest request, HttpServletResponse response) 
+    @Override
+	protected void
+	doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException 
 	{
 		PrintWriter out = response.getWriter();
@@ -90,8 +94,9 @@ public class GetMessages extends HttpServlet {
 		out.close();
 	}
 
-	protected 
-	void doPost(HttpServletRequest request, HttpServletResponse response) 
+	@Override
+	protected void
+	doPost(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException 
 	{
 		doGet(request, response);
@@ -150,24 +155,27 @@ public class GetMessages extends HttpServlet {
 				break;
 		}
 
-		XJSONObject reqObj = new XJSONObject(GetJson.from("es-mappings/message.json"));
-
-		if (time_order != null) {
-			// Set Timestamp filter
-			reqObj.put("query.bool.filter[0].range.timestamp."+time_order, datetime);
-
-		}
-
-		// Set order of message retrieval
-		reqObj.put("sort[0].timestamp.order",sort_order);
-
-		// Set number of messages to extract
-		reqObj.put("size", 10);
-
-		System.out.println("Message data: \n" + reqObj.toString());
-
 		try {
-			resObj = new XJSONObject(ElasticManager.get("/" + chat_id + "_msgs/_search", reqObj.toString()));
+			XJSONObject reqObj = new XJSONObject(GetJson.from("es-mappings/message.json"));
+
+			reqObj.put("query.bool.must.term.chat_id", chat_id);
+
+			if (time_order != null) {
+				// Set Timestamp filter
+				reqObj.put("query.bool.filter[0].range.timestamp."+time_order, datetime);
+
+			}
+
+			// Set order of message retrieval
+			reqObj.put("sort[0].timestamp.order",sort_order);
+
+			// Set number of messages to extract
+			reqObj.put("size", 10);
+
+			System.out.println("Message data: \n" + reqObj.toString());
+
+
+			resObj = new XJSONObject(ElasticManager.get("/messages/_search", reqObj.toString()));
 			System.out.println(resObj.toString());
 			JSONArray resArray = (JSONArray) resObj.get("hits.hits");
 			for (Object obj : resArray) {
@@ -181,7 +189,7 @@ public class GetMessages extends HttpServlet {
 						)
 				);
 			}
-		} catch (IOException e) {
+		} catch (IOException | XJSONException e) {
 			LOGGER.severe(e.getMessage());
 		} catch (RuntimeException e) {
 			LOGGER.severe("Elasticsearch Error: \n" + resObj.toString());

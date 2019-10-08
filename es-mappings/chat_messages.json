@@ -1,6 +1,7 @@
 {
     "mappings": {
         "properties": {
+            "chat_id": {"type": "integer"},
             "sender": {"type": "keyword"},
             "message": {"type": "text"},
             "timestamp": {"type": "date", "format": "yyyy-MM-dd HH:mm:ss.SSS"}

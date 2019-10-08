@@ -6,6 +6,7 @@ import com.chatapp.util.GetJson;
 import org.json.JSONObject;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ import java.util.logging.Logger;
  *		[sender] (FROM SESSION)
  *		(String reply) true or false
  */
+@WebServlet(urlPatterns = "/create_chat")
 public class CreateChat extends HttpServlet {
     private static final long serialVersionUID = 1L;
     private static Logger LOGGER = Logger.getLogger(CreateChat.class.getName());
@@ -154,8 +156,6 @@ public class CreateChat extends HttpServlet {
 
             stmt.executeBatch();
 
-            createChatMessageIndex(chat_id);
-
             isChatCreated = true;
         } catch (SQLException e) {
             LOGGER.severe(e.getMessage());
@@ -210,8 +210,6 @@ public class CreateChat extends HttpServlet {
             }
 
             stmt.executeBatch();
-
-            createChatMessageIndex(chat_id);
 
             isChatCreated = true;
         } catch (SQLException e) {

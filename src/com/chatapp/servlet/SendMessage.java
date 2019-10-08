@@ -1,6 +1,5 @@
 package com.chatapp.servlet;
 
-import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
 import org.json.JSONObject;
 
@@ -100,9 +99,9 @@ public class SendMessage extends HttpServlet {
 	 */
 	private
 	boolean sendMessage (int chat_id, String sender, String message, Date dt) {
-		if (DatabaseQuery.isUserAuthorized(sender, chat_id)) {
+		/*if (DatabaseQuery.isUserAuthorized(sender, chat_id)) {
 			return false;
-		}
+		}*/
 
 		boolean isIndexInserted = false;
 		JSONObject reqObject = new JSONObject();

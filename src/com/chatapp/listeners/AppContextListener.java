@@ -17,7 +17,9 @@ public class AppContextListener implements ServletContextListener {
 	contextInitialized(ServletContextEvent servletContextEvent)
 	{
 		DatabaseManager.initialize();
+
 		ElasticManager.setBaseUrl("localhost", 9200, "http");
+
 		ExecutorService executor = Executors.newFixedThreadPool(100);
 		servletContextEvent.getServletContext().setAttribute("executor", executor);
 	}

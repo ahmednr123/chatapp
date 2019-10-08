@@ -27,12 +27,11 @@ public class SearchMessages extends HttpServlet {
     private static final int ANY_TERM_SEARCH = 1;
 
     public
-    SearchMessages () {
+    SearchMessages () { }
 
-    }
-
-    protected
-    void doGet (HttpServletRequest request, HttpServletResponse response)
+    @Override
+    protected void
+    doGet (HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
         PrintWriter out = response.getWriter();
@@ -75,8 +74,9 @@ public class SearchMessages extends HttpServlet {
         out.close();
     }
 
-    protected
-    void doPost (HttpServletRequest request, HttpServletResponse response)
+    @Override
+    protected void
+    doPost (HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException
     {
         response.getWriter().println("false");
@@ -92,7 +92,9 @@ public class SearchMessages extends HttpServlet {
      * @return
      */
     private
-    ArrayList<ChatMessage> getSearchResults (int chat_id, int type, String search_term, int from) {
+    ArrayList<ChatMessage>
+    getSearchResults (int chat_id, int type, String search_term, int from)
+    {
         ArrayList<ChatMessage> chatMessages = new ArrayList<>();
         XJSONObject resObj;
 

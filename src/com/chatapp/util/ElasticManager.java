@@ -66,30 +66,7 @@ public class ElasticManager {
     static JSONObject HttpRequest (String method, String URL)
             throws IOException, JSONException
     {
-        String str, jsonString = "";
-        JSONObject responseObj;
-
-        HttpURLConnection connection = (HttpURLConnection) new URL(URL).openConnection();
-        connection.setRequestMethod(method);
-        connection.setRequestProperty("Content-Type", "application/json");
-
-        InputStream response;
-
-        try {
-            response = connection.getInputStream();
-        } catch (Exception e) {
-           response = connection.getErrorStream();
-        }
-
-        BufferedReader bf = new BufferedReader(new InputStreamReader(response));
-        while ((str = bf.readLine()) != null){
-            jsonString += str;
-        };
-        bf.close();
-
-        responseObj = new JSONObject(jsonString);
-
-        return responseObj;
+        return HttpRequest(method, URL, null);
     }
 
     private
@@ -103,11 +80,14 @@ public class ElasticManager {
         connection.setRequestMethod(method);
         connection.setConnectTimeout(5000);
         connection.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        connection.setDoOutput(true);
 
-        OutputStream request = connection.getOutputStream();
-        request.write(JSON.getBytes("UTF-8"));
-        request.close();
+        if (JSON != null) {
+            connection.setDoOutput(true);
+
+            OutputStream request = connection.getOutputStream();
+            request.write(JSON.getBytes("UTF-8"));
+            request.close();
+        }
 
         InputStream response;
 

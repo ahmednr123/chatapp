@@ -31,15 +31,17 @@ public class SendMessage extends HttpServlet {
 		super();
 	}
 
-	protected
-	void doGet (HttpServletRequest request, HttpServletResponse response) 
+	@Override
+	protected void
+	doGet (HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException 
 	{
 			response.getWriter().println("false");
 	}
 
-	protected
-	void doPost (HttpServletRequest request, HttpServletResponse response) 
+	@Override
+	protected void
+	doPost (HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException 
 	{
 		PrintWriter out = response.getWriter();
@@ -99,7 +101,7 @@ public class SendMessage extends HttpServlet {
 	 */
 	private
 	boolean sendMessage (int chat_id, String sender, String message, Date dt) {
-		/*if (DatabaseQuery.isUserAuthorized(sender, chat_id)) {
+		/*if (!DatabaseQuery.isUserAuthorized(sender, chat_id)) {
 			return false;
 		}*/
 

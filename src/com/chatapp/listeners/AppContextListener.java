@@ -3,6 +3,7 @@ package com.chatapp.listeners;
 import com.chatapp.util.DatabaseManager;
 import com.chatapp.util.ElasticManager;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
@@ -16,12 +17,14 @@ public class AppContextListener implements ServletContextListener {
 	public void
 	contextInitialized(ServletContextEvent servletContextEvent)
 	{
+		ServletContext ctx = servletContextEvent.getServletContext();
+
 		DatabaseManager.initialize();
 
 		ElasticManager.setBaseUrl("localhost", 9200, "http");
 
 		ExecutorService executor = Executors.newFixedThreadPool(100);
-		servletContextEvent.getServletContext().setAttribute("executor", executor);
+		ctx.setAttribute("executor", executor);
 	}
 
 	@Override

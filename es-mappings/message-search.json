@@ -1,0 +1,10 @@
+{
+    "query":{
+        "bool":{
+            "must":[
+                {"term":{"chat_id":-1}},
+                {"match":{"message":{"query":""}}}
+            ]
+        }
+    }
+}

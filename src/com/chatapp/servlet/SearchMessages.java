@@ -3,6 +3,7 @@ package com.chatapp.servlet;
 import com.chatapp.format.ChatMessage;
 import com.chatapp.util.DatabaseQuery;
 import com.chatapp.util.ElasticManager;
+import com.chatapp.util.GetJson;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.xjson.XJSONException;
@@ -99,10 +100,10 @@ public class SearchMessages extends HttpServlet {
         XJSONObject resObj;
 
         try {
-            XJSONObject reqObj = new XJSONObject();
+            XJSONObject reqObj = new XJSONObject(GetJson.from("es-mappings/message-search.json"));
             reqObj.setCreateOnFly(true);
-            reqObj.put("query.match.message.query", search_term);
-            reqObj.put("query.bool.must.term.chat_id", chat_id);
+            reqObj.put("query.bool.must[0].term.chat_id", chat_id);
+            reqObj.put("query.bool.must[1].match.message.query", search_term);
 
             reqObj.put("size", 10);
             reqObj.put("from", from);
@@ -115,6 +116,7 @@ public class SearchMessages extends HttpServlet {
                     //do nothing
             }
 
+            System.out.println("QUERY: " + reqObj.toString());
             resObj = new XJSONObject(ElasticManager.get("/messages/_search", reqObj.toString()));
             System.out.println(resObj.toString());
             JSONArray resArray = (JSONArray) resObj.get("hits.hits");
